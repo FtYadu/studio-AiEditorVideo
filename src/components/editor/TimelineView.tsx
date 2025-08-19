@@ -19,6 +19,8 @@ interface TimelineViewProps {
   totalDuration: number;
   selectedClip: Clip | null;
   onClipSelected: (clip: Clip | null) => void;
+  bladeMode: boolean;
+  onSplitClip: (clip: Clip, time: number) => void;
 }
 
 export function TimelineView({ 
@@ -30,7 +32,9 @@ export function TimelineView({
   clips, 
   totalDuration,
   selectedClip,
-  onClipSelected
+  onClipSelected,
+  bladeMode,
+  onSplitClip,
 }: TimelineViewProps) {
   const [zoom, setZoom] = useState(80);
   const timelineContainerRef = useRef<HTMLDivElement>(null);
@@ -62,15 +66,38 @@ export function TimelineView({
     const clickX = e.clientX - rect.left;
     const percentage = (clickX / rect.width);
     const newTime = percentage * totalDuration;
-    onSeek(newTime);
+
+    if (bladeMode) {
+      // Find which clip was clicked
+      const clickedClip = clips.find(c => {
+        const clipStartPos = (c.start / totalDuration) * rect.width;
+        const clipEndPos = ((c.start + c.dur) / totalDuration) * rect.width;
+        return clickX >= clipStartPos && clickX <= clipEndPos;
+      });
+      if (clickedClip) {
+        onSplitClip(clickedClip, newTime);
+      }
+    } else {
+       onSeek(newTime);
+    }
   };
   
   const handleClipClick = (e: React.MouseEvent, clip: Clip) => {
     e.stopPropagation(); // Prevent timeline click from firing
-    onClipSelected(clip);
+    if (bladeMode) {
+      const rect = (e.currentTarget as HTMLDivElement).parentElement?.parentElement?.getBoundingClientRect();
+      if (!rect) return;
+      const clickX = e.clientX - rect.left;
+      const percentage = (clickX / rect.width);
+      const newTime = percentage * totalDuration;
+      onSplitClip(clip, newTime);
+    } else {
+      onClipSelected(clip);
+    }
   }
 
-  const handleTrackClick = () => {
+  const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    handleTimelineClick(e);
     onClipSelected(null);
   }
   
@@ -128,7 +155,7 @@ export function TimelineView({
                 </div>
               </div>
 
-              <div className="flex-1 overflow-auto relative" onClick={handleTrackClick}>
+              <div className={cn("flex-1 overflow-auto relative", bladeMode && "cursor-crosshair")} onClick={handleTrackClick}>
                 <div 
                   className="h-8 sticky top-0 z-10 bg-secondary/80 backdrop-blur-sm text-[10px] text-muted-foreground flex items-end pl-16 border-b border-border cursor-pointer" 
                   style={{ width: timelineWidth }}
@@ -150,7 +177,8 @@ export function TimelineView({
                               key={c.id} 
                               onClick={(e) => handleClipClick(e, c)}
                               className={cn(
-                                "absolute h-8 rounded-md border flex items-center px-2 text-xs text-white backdrop-blur-sm shadow-md overflow-hidden cursor-pointer",
+                                "absolute h-8 rounded-md border flex items-center px-2 text-xs text-white backdrop-blur-sm shadow-md overflow-hidden",
+                                bladeMode ? 'cursor-crosshair' : 'cursor-pointer',
                                 c.color,
                                 selectedClip?.id === c.id ? "border-yellow-400 ring-2 ring-yellow-400" : "border-black/20"
                               )}

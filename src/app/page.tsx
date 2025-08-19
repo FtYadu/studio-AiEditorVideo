@@ -11,7 +11,7 @@ import { Inspector } from "@/components/editor/Inspector";
 import { Transport } from "@/components/editor/Transport";
 import { CommandMenu } from "@/components/editor/CommandMenu";
 import { ExportDialog } from "@/components/editor/ExportDialog";
-import { Captions, Download, FolderOpen, Layers, MonitorDown, Wand2, Workflow } from "lucide-react";
+import { Captions, Download, FolderOpen, Layers, MonitorDown, Scissors, Wand2, Workflow } from "lucide-react";
 import type { CommandAction, Asset, Track, Clip, Template, NodeItem, EdgeItem } from "@/types/editor";
 import { autoCaption } from "@/ai/flows/auto-captioning";
 import { autoSceneDetection } from "@/ai/flows/auto-scene-detection";
@@ -63,6 +63,7 @@ export default function AIVideoEditorUI() {
   const [totalDuration, setTotalDuration] = useState(20);
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   const [edges, setEdges] = useState<EdgeItem[]>([]);
+  const [bladeMode, setBladeMode] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -98,6 +99,10 @@ export default function AIVideoEditorUI() {
       if ((e.ctrlKey || e.metaKey) && e.key === "2") {
         e.preventDefault();
         setMode("edit");
+      }
+      if (!isInput && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        setBladeMode(v => !v);
       }
     };
     window.addEventListener("keydown", handler);
@@ -444,11 +449,51 @@ export default function AIVideoEditorUI() {
     }
   };
 
+  const handleSplitClip = (clip: Clip, splitTime: number) => {
+    if (splitTime <= clip.start || splitTime >= clip.start + clip.dur) {
+      // Split time is outside the clip's duration, do nothing.
+      return;
+    }
+
+    const timeIntoClip = splitTime - clip.start;
+
+    const clip1: Clip = {
+      ...clip,
+      id: `clip-${Date.now()}-1`,
+      dur: timeIntoClip,
+      label: `${clip.label} (1)`,
+    };
+
+    const clip2: Clip = {
+      ...clip,
+      id: `clip-${Date.now()}-2`,
+      start: splitTime,
+      dur: clip.dur - timeIntoClip,
+      inPoint: clip.inPoint + timeIntoClip,
+      label: `${clip.label} (2)`,
+    };
+
+    setClips(currentClips => [
+      ...currentClips.filter(c => c.id !== clip.id),
+      clip1,
+      clip2,
+    ]);
+
+    setSelectedClip(null);
+    setBladeMode(false);
+
+    toast({
+      title: '✂️ Clip Split',
+      description: `Clip "${clip.label}" was split into two.`,
+    });
+  };
+
 
   const actions: CommandAction[] = [
     { id: "import", label: "Import Media…", icon: <FolderOpen className="mr-2 h-4 w-4" />, run: handleImportClick },
     { id: "captrack", label: "Create Caption Track", icon: <Captions className="mr-2 h-4 w-4" />, run: handleAutoCaption },
     { id: "autocut", label: "Run Auto-Cut", icon: <Wand2 className="mr-2 h-4 w-4" />, run: handleAutoSceneDetection },
+    { id: "blade", label: "Toggle Blade Tool", icon: <Scissors className="mr-2 h-4 w-4" />, run: () => setBladeMode(v => !v) },
     { id: "autocolor", label: "Run Auto-Color", icon: <Wand2 className="mr-2 h-4 w-4" />, run: handleAutoColor },
     { id: "recipe60", label: "Run Recipe: TikTok 60s Punch‑Cut", icon: <Wand2 className="mr-2 h-4 w-4" />, run: () => handleGeneratePunchCutEdit(templates[0]) },
     { id: "draft", label: "Toggle Draft/Full Preview", icon: <MonitorDown className="mr-2 h-4 w-4" />, run: () => setDraftQuality((d) => !d) },
@@ -513,6 +558,8 @@ export default function AIVideoEditorUI() {
                   if (selectedAsset) videoRef.current!.src = selectedAsset.url;
                   setSelectedClip(clip)
                 }}
+                bladeMode={bladeMode}
+                onSplitClip={handleSplitClip}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -536,6 +583,8 @@ export default function AIVideoEditorUI() {
           setTimecode={setTimecode}
           mode={mode}
           setMode={setMode}
+          bladeMode={bladeMode}
+          onBladeToggle={() => setBladeMode(v => !v)}
         />
 
         <CommandMenu
