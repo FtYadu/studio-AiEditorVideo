@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -126,14 +127,9 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
             <ScrollArea className="h-full">
                 <div className="p-3 space-y-4">
                     <TabsContent value="general" className="mt-0 space-y-4">
-                        <div className="flex gap-2">
-                          <LabeledInput label="Name" placeholder="Item Name" value={itemName} onChange={handleNameChange} onBlur={handleNameBlur} className="flex-1" />
-                          <TooltipWrap label="Delete Clip">
-                            <Button variant="destructive" size="icon" className="shrink-0 mt-5" onClick={onDeleteClip} disabled={!selectedClip}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipWrap>
-                        </div>
+                        
+                        <LabeledInput label="Name" placeholder="Item Name" value={itemName} onChange={handleNameChange} onBlur={handleNameBlur} className="flex-1" />
+                          
                         {isCaption ? (
                             <div>
                                 <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Caption Text</div>
@@ -180,6 +176,11 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
                         </div>
                       </div>
                     </TabsContent>
+                    {selectedClip && (
+                        <Button variant="destructive" className="w-full" onClick={onDeleteClip}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Clip
+                        </Button>
+                    )}
                 </div>
             </ScrollArea>
           </div>

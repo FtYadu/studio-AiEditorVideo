@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useRef } from 'react';
@@ -18,6 +17,14 @@ export const useHistory = <T>(initialState: T) => {
   
   const canUndo = state.past.length > 0;
   const canRedo = state.future.length > 0;
+  
+  const setInitialState = useCallback((newInitialState: T) => {
+    setState({
+        past: [],
+        present: newInitialState,
+        future: [],
+    });
+  }, []);
 
   const set = useCallback((newState: T) => {
     setState(currentState => {
@@ -65,7 +72,6 @@ export const useHistory = <T>(initialState: T) => {
     redo,
     canUndo,
     canRedo,
+    setInitialState,
   };
 };
-
-    

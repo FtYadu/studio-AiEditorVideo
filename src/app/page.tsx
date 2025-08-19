@@ -48,27 +48,53 @@ const initialNodes: NodeItem[] = [
   { id: "n8", label: "Export", type: "export", x: 1000, y: 140, status: 'idle' },
 ]
 
+const usePersistentState = <T,>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
+    const [state, setState] = useState<T>(() => {
+        if (typeof window === 'undefined') {
+            return defaultValue;
+        }
+        try {
+            const storedValue = window.localStorage.getItem(key);
+            return storedValue ? JSON.parse(storedValue) : defaultValue;
+        } catch (error) {
+            console.error(`Error reading localStorage key “${key}”:`, error);
+            return defaultValue;
+        }
+    });
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem(key, JSON.stringify(state));
+        } catch (error) {
+            console.error(`Error setting localStorage key “${key}”:`, error);
+        }
+    }, [key, state]);
+
+    return [state, setState];
+};
+
+
 export default function AIVideoEditorUI() {
-  const [mode, setMode] = useState<"workflow" | "edit">("workflow");
-  const [collapsedLeft, setCollapsedLeft] = useState(false);
-  const [collapsedRight, setCollapsedRight] = useState(false);
-  const [draftQuality, setDraftQuality] = useState(true);
-  const [proxy, setProxy] = useState(50);
+  const [mode, setMode] = usePersistentState<"workflow" | "edit">("aiveditor_mode", "workflow");
+  const [collapsedLeft, setCollapsedLeft] = usePersistentState("aiveditor_collapsedLeft", false);
+  const [collapsedRight, setCollapsedRight] = usePersistentState("aiveditor_collapsedRight", false);
+  const [draftQuality, setDraftQuality] = usePersistentState("aiveditor_draftQuality", true);
+  const [proxy, setProxy] = usePersistentState("aiveditor_proxy", 50);
   const [isPlaying, setIsPlaying] = useState(false);
   const [timecode, setTimecode] = useState("00:00:00:00");
   const [cmdOpen, setCmdOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [projectName, setProjectName] = useState("AIVidFlow Project");
-  const [assets, setAssets] = useState<Asset[]>([]);
+  const [projectName, setProjectName] = usePersistentState("aiveditor_projectName", "AIVidFlow Project");
+  const [assets, setAssets] = usePersistentState<Asset[]>("aiveditor_assets", []);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  const [tracks, setTracks] = useState<Track[]>([]);
+  const [tracks, setTracks] = usePersistentState<Track[]>("aiveditor_tracks", []);
   
-  const { state: clips, setState: setClips, undo: undoClips, redo: redoClips, canUndo, canRedo } = useHistory<Clip[]>([]);
+  const { state: clips, setState: setClips, undo: undoClips, redo: redoClips, canUndo, canRedo, setInitialState: setHistoryInitialState } = useHistory<Clip[]>([]);
   
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null);
-  const [totalDuration, setTotalDuration] = useState(20);
-  const [nodes, setNodes] = useState<NodeItem[]>([]);
-  const [edges, setEdges] = useState<EdgeItem[]>([]);
+  const [totalDuration, setTotalDuration] = usePersistentState("aiveditor_totalDuration", 20);
+  const [nodes, setNodes] = usePersistentState<NodeItem[]>("aiveditor_nodes", []);
+  const [edges, setEdges] = usePersistentState<EdgeItem[]>("aiveditor_edges", []);
   const [bladeMode, setBladeMode] = useState(false);
   const [activeCaption, setActiveCaption] = useState<string>('');
 
@@ -76,6 +102,31 @@ export default function AIVideoEditorUI() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+
+  // Load clips from local storage into history state
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        try {
+            const storedClips = window.localStorage.getItem('aiveditor_clips');
+            if (storedClips) {
+                setHistoryInitialState(JSON.parse(storedClips));
+            }
+        } catch (error) {
+            console.error('Error reading clips from localStorage:', error);
+        }
+    }
+  }, [setHistoryInitialState]);
+
+  // Save clips from history state to local storage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        try {
+            window.localStorage.setItem('aiveditor_clips', JSON.stringify(clips));
+        } catch (error) {
+            console.error('Error setting clips in localStorage:', error);
+        }
+    }
+  }, [clips]);
   
   const formatTime = (time: number) => {
     const fps = 25;

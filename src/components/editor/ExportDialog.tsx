@@ -24,18 +24,31 @@ function generateTimelinePrompt(clips: Clip[]): string {
     }
 
     const sortedClips = [...clips].sort((a, b) => a.start - b.start);
+    
     const descriptions = sortedClips.map(clip => {
-        let desc = `a scene of '${clip.label}'`;
-        if (clip.opacity < 100) desc += ` at ${clip.opacity}% opacity`;
-        if (clip.transform.scale !== 100) desc += ` zoomed to ${clip.transform.scale}%`;
-        if (clip.effects.saturation < 0.8) desc += " in black and white";
-        if (clip.effects.contrast > 1.2) desc += " with high contrast";
-        if (clip.effects.exposure !== 1.0) desc += ` with an exposure of ${clip.effects.exposure}`;
-        if (clip.effects.lut) desc += ` with a ${clip.effects.lut} color grade`;
+        let desc = `A ${clip.dur.toFixed(1)} second scene of '${clip.label}'`;
+
+        const transformParts = [];
+        if (clip.transform.scale !== 100) transformParts.push(`zoomed to ${clip.transform.scale}%`);
+        if (clip.transform.x !== 0 || clip.transform.y !== 0) transformParts.push(`positioned at (${clip.transform.x}, ${clip.transform.y})`);
+        if (transformParts.length > 0) desc += ` that is ${transformParts.join(" and ")}`;
+
+        const effectParts = [];
+        if (clip.opacity < 100) effectParts.push(`at ${clip.opacity}% opacity`);
+        if (clip.effects.saturation !== 1.0) effectParts.push(`with saturation at ${clip.effects.saturation.toFixed(2)}`);
+        if (clip.effects.contrast !== 1.0) effectParts.push(`with contrast at ${clip.effects.contrast.toFixed(2)}`);
+        if (clip.effects.exposure !== 1.0) effectParts.push(`with exposure at ${clip.effects.exposure.toFixed(2)}`);
+        if (clip.effects.lut) effectParts.push(`with a '${clip.effects.lut}' color grade`);
+        if (clip.text) effectParts.push(`with the caption "${clip.text}"`);
+        
+        if (effectParts.length > 0) {
+            desc += `, styled ${effectParts.join(", ")}`;
+        }
+
         return desc;
     });
 
-    return `A video that starts with ${descriptions.join(", then ")}.`;
+    return `A video that starts with ${descriptions.join(", followed by ")}. The total duration is ${sortedClips[sortedClips.length -1].start + sortedClips[sortedClips.length -1].dur} seconds.`;
 }
 
 
