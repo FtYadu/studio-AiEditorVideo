@@ -18,6 +18,7 @@ import { autoCaption } from "@/ai/flows/auto-captioning";
 import { autoSceneDetection } from "@/ai/flows/auto-scene-detection";
 import { generatePunchCutEdit } from "@/ai/flows/smart-templates";
 import { autoColor } from "@/ai/flows/auto-color";
+import { categorizeAsset } from "@/ai/flows/categorize-asset";
 import { useToast } from "@/hooks/use-toast";
 
 const templates: Template[] = [
@@ -131,10 +132,12 @@ export default function AIVideoEditorUI() {
         videoRef.current.style.opacity = `${selectedClip.opacity / 100}`;
         videoRef.current.style.filter = `saturate(${selectedClip.effects.saturation}) contrast(${selectedClip.effects.contrast}) brightness(${selectedClip.effects.exposure})`;
         videoRef.current.style.transform = `translate(${selectedClip.transform.x}px, ${selectedClip.transform.y}px) scale(${selectedClip.transform.scale / 100})`;
+        videoRef.current.volume = selectedClip.volume / 100;
       } else {
         videoRef.current.style.opacity = `1`;
         videoRef.current.style.filter = `saturate(1) contrast(1) brightness(1)`;
         videoRef.current.style.transform = `translate(0, 0) scale(1)`;
+        videoRef.current.volume = 1;
       }
     }
   }, [selectedClip]);
@@ -179,17 +182,35 @@ export default function AIVideoEditorUI() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const videoUrl = e.target?.result as string;
+        const fileDataUrl = e.target?.result as string;
         const videoEl = document.createElement('video');
-        videoEl.src = videoUrl;
-        videoEl.onloadedmetadata = () => {
+        videoEl.src = fileDataUrl;
+        videoEl.onloadedmetadata = async () => {
+          
+          let category: Asset['category'] = 'General';
+          try {
+            toast({ title: "🤖 Analyzing Asset", description: "AI is categorizing the new media..." });
+            const result = await categorizeAsset({ mediaDataUri: fileDataUrl, fileName: file.name });
+            category = result.category;
+             toast({ title: "✅ Asset Categorized", description: `Asset added to "${category}" bin.` });
+          } catch(error) {
+             console.error("Asset categorization failed:", error);
+             toast({
+                variant: "destructive",
+                title: "⚠️ AI Categorization Failed",
+                description: "Could not categorize asset. Adding to 'General' bin.",
+             });
+          }
+
           const newAsset: Asset = {
             id: `asset-${Date.now()}`,
             name: file.name,
             type: file.type.startsWith('video') ? 'video' : 'audio',
-            url: videoUrl,
+            url: fileDataUrl,
             duration: videoEl.duration,
+            category: category,
           };
+
           setAssets((prevAssets) => [...prevAssets, newAsset]);
           setSelectedAsset(newAsset);
           setTotalDuration(videoEl.duration);
@@ -210,6 +231,7 @@ export default function AIVideoEditorUI() {
             label: newAsset.name,
             color: "bg-primary/50",
             opacity: 100,
+            volume: 100,
             transform: { x: 0, y: 0, scale: 100 },
             effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
           };
@@ -257,6 +279,7 @@ export default function AIVideoEditorUI() {
           label: result.captions.substring(0, 20) + '...',
           color: "bg-pink-500/50",
           opacity: 100,
+          volume: 100,
           transform: { x: 0, y: 0, scale: 100 },
           effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
         }
@@ -321,6 +344,7 @@ export default function AIVideoEditorUI() {
             label: `Scene ${i + 1}`,
             color: i % 2 === 0 ? "bg-primary/50" : "bg-accent/50",
             opacity: 100,
+            volume: 100,
             transform: { x: 0, y: 0, scale: 100 },
             effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
           });
@@ -385,6 +409,7 @@ export default function AIVideoEditorUI() {
                   label: `${template.name} ${i + 1}`,
                   color: "bg-purple-500/50",
                   opacity: 100,
+                  volume: 100,
                   transform: { x: 0, y: 0, scale: 100 },
                   effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
               };
@@ -649,3 +674,5 @@ export default function AIVideoEditorUI() {
     </TooltipProvider>
   );
 }
+
+    

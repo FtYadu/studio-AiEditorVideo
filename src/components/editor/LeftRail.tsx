@@ -5,11 +5,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Film, Layers, PanelLeft, PanelRight, Search, Upload, Wand2 } from "lucide-react";
+import { Film, FolderTree, Layers, PanelLeft, PanelRight, Search, Upload, Wand2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { TooltipWrap } from "./ui-helpers";
-import type { Asset, Template } from "@/types/editor";
+import type { Asset, AssetCategory, Template } from "@/types/editor";
 import { cn } from "@/lib/utils";
+
+const BINS: AssetCategory[] = ["Talking Head", "B-Roll", "Music", "Sound Effects", "Images", "General"];
 
 interface AssetsPaneProps {
   onImport: () => void;
@@ -19,40 +21,62 @@ interface AssetsPaneProps {
 }
 
 function AssetsPane({ onImport, assets, selectedAsset, onAssetClick }: AssetsPaneProps) {
+  const [activeBin, setActiveBin] = useState<AssetCategory | 'All'>('All');
+  const [search, setSearch] = useState('');
+
+  const filteredAssets = assets.filter(asset => {
+    const inBin = activeBin === 'All' || asset.category === activeBin;
+    const inSearch = search === '' || asset.name.toLowerCase().includes(search.toLowerCase());
+    return inBin && inSearch;
+  });
+
   return (
     <div className="h-full flex flex-col">
       <div className="p-3 border-b border-border flex items-center gap-2">
         <Button variant="secondary" className="h-8" onClick={onImport}><Upload className="h-4 w-4 mr-2"/>Import</Button>
         <div className="relative flex-1">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"/>
-          <Input placeholder="Search assets…" className="pl-8 h-8 bg-transparent border-input"/>
+          <Input placeholder="Search assets…" className="pl-8 h-8 bg-transparent border-input" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
-      <ScrollArea className="flex-1">
-        <div className="p-3 grid grid-cols-2 xl:grid-cols-3 gap-3">
-          {assets.map((asset) => (
-            <div 
-              key={asset.id} 
-              className={cn(
-                "aspect-video rounded-md bg-secondary border border-border overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-primary/50",
-                selectedAsset?.id === asset.id && "ring-primary"
-              )}
-              onClick={() => onAssetClick(asset)}
-            >
-               {asset.type === 'video' ? (
-                  <video src={asset.url} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full object-cover bg-secondary grid place-content-center text-xs text-muted-foreground">{asset.name}</div>
+      <div className="flex-1 flex min-h-0">
+        <ScrollArea className="w-40 border-r border-border">
+            <div className="p-2 space-y-1">
+                <Button variant={activeBin === 'All' ? 'secondary' : 'ghost'} size="sm" className="w-full justify-start" onClick={() => setActiveBin('All')}>All Media</Button>
+                <div className="text-xs font-headline text-muted-foreground px-2 pt-2">Smart Bins</div>
+                {BINS.map(bin => (
+                    <Button key={bin} variant={activeBin === bin ? 'secondary' : 'ghost'} size="sm" className="w-full justify-start" onClick={() => setActiveBin(bin)}>
+                        <FolderTree className="h-4 w-4 mr-2"/> {bin}
+                    </Button>
+                ))}
+            </div>
+        </ScrollArea>
+        <ScrollArea className="flex-1">
+          <div className="p-3 grid grid-cols-2 xl:grid-cols-3 gap-3">
+            {filteredAssets.map((asset) => (
+              <div 
+                key={asset.id} 
+                className={cn(
+                  "aspect-video rounded-md bg-secondary border border-border overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-primary/50",
+                  selectedAsset?.id === asset.id && "ring-primary"
                 )}
-            </div>
-          ))}
-          {assets.length === 0 && Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="aspect-video rounded-md bg-secondary border border-border overflow-hidden">
-               <img src="https://placehold.co/300x200.png" alt={`Clip ${i+1}`} className="w-full h-full object-cover" data-ai-hint="video footage" />
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
+                onClick={() => onAssetClick(asset)}
+              >
+                 {asset.type === 'video' ? (
+                    <video src={asset.url} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full object-cover bg-secondary grid place-content-center text-xs text-muted-foreground">{asset.name}</div>
+                  )}
+              </div>
+            ))}
+            {filteredAssets.length === 0 && (
+              <div className="col-span-full text-center text-sm text-muted-foreground p-8">
+                No assets in this bin.
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
@@ -181,3 +205,5 @@ export function LeftRail({
     </div>
   );
 }
+
+    

@@ -9,6 +9,7 @@ import { PanelLeft, PanelRight, Trash2 } from "lucide-react";
 import { LabeledInput, TooltipWrap } from "./ui-helpers";
 import type { Asset, Clip } from "@/types/editor";
 import { Input } from "../ui/input";
+import { Slider } from "../ui/slider";
 
 interface InspectorProps {
   collapsed: boolean;
@@ -27,6 +28,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
   // General states
   const [opacity, setOpacity] = useState(100);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 100 });
+  const [volume, setVolume] = useState(100);
   
   // Effect states
   const [saturation, setSaturation] = useState(1.0);
@@ -41,6 +43,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
       setItemName(selectedClip.label);
       setOpacity(selectedClip.opacity);
       setTransform(selectedClip.transform);
+      setVolume(selectedClip.volume);
       setSaturation(selectedClip.effects.saturation);
       setContrast(selectedClip.effects.contrast);
       setExposure(selectedClip.effects.exposure);
@@ -50,6 +53,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
       // Reset states when only an asset is selected
       setOpacity(100);
       setTransform({ x: 0, y: 0, scale: 100 });
+      setVolume(100);
       setSaturation(1.0);
       setContrast(1.0);
       setExposure(1.0);
@@ -83,6 +87,12 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
     handleUpdate('clip', { transform: newTransform });
   };
   
+  const handleVolumeChange = (value: number[]) => {
+    const newVolume = value[0];
+    setVolume(newVolume);
+    handleUpdate('clip', { volume: newVolume });
+  };
+
   return (
     <div className="h-full flex flex-col bg-secondary/20">
       <div className="h-10 border-b border-border flex items-center px-2 gap-2">
@@ -98,6 +108,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
           <TabsList className="m-2 bg-background/50 border-border">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="effect">Effect</TabsTrigger>
+            <TabsTrigger value="audio">Audio</TabsTrigger>
           </TabsList>
           <div className="flex-1 min-h-0">
             <ScrollArea className="h-full">
@@ -139,6 +150,15 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
                           <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={saturation} onChange={(e) => { const val = parseFloat(e.target.value); setSaturation(val); handleUpdate('clip', { effects: { ...selectedClip!.effects, saturation: val } }); }} disabled={!selectedClip} />
                         </div>
                     </TabsContent>
+                    <TabsContent value="audio" className="mt-0 space-y-4">
+                      <div>
+                        <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Volume</div>
+                        <div className="flex items-center gap-2">
+                           <Slider value={[volume]} onValueChange={handleVolumeChange} max={100} step={1} disabled={!selectedClip} />
+                           <span className="text-xs w-12 text-right text-muted-foreground">{volume}%</span>
+                        </div>
+                      </div>
+                    </TabsContent>
                 </div>
             </ScrollArea>
           </div>
@@ -147,3 +167,5 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
     </div>
   );
 }
+
+    

@@ -22,12 +22,16 @@ export interface CommandAction {
   run: () => void;
 }
 
+export type AssetCategory = "Talking Head" | "B-Roll" | "Music" | "Sound Effects" | "Images" | "General";
+
+
 export interface Asset {
   id: string;
   name: string;
   type: 'video' | 'audio';
   url: string;
   duration?: number;
+  category: AssetCategory;
 }
 
 export type TrackType = 'video' | 'audio' | 'caption';
@@ -42,6 +46,7 @@ export interface Clip {
   label: string;
   color: string;
   opacity: number;
+  volume: number;
   transform: {
     x: number;
     y: number;
@@ -72,3 +77,5 @@ export interface EditDecision {
   start: number;
   end: number;
 }
+
+    
