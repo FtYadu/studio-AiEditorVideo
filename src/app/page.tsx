@@ -151,6 +151,7 @@ export default function AIVideoEditorUI() {
           setAssets((prevAssets) => [...prevAssets, newAsset]);
           setSelectedAsset(newAsset);
           setTotalDuration(videoEl.duration);
+          setSelectedClip(null);
 
           const videoTrack: Track = { id: 'track-v1', name: 'V1', type: 'video' };
           const audioTrack: Track = { id: 'track-a1', name: 'A1', type: 'audio' };
@@ -219,7 +220,7 @@ export default function AIVideoEditorUI() {
         { id: "n4", label: "Transcript", type: "transcript", x: 520, y: 60 },
         { id: "n5", label: "Caption", type: "caption", x: 760, y: 60 },
       ]);
-      setEdges(e => e.some(edge => edge.from === 'n4') ? e : [
+      setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === 'n4') ? e : [
         ...e,
         { from: "n1", to: "n4" },
         { from: "n4", to: "n5" },
@@ -280,7 +281,7 @@ export default function AIVideoEditorUI() {
         ...n,
         { id: "n2", label: "Scene Detect", type: "scene", x: 280, y: 60 },
       ]);
-      setEdges(e => e.some(edge => edge.to === 'n2') ? e : [
+      setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === 'n2') ? e : [
         ...e,
         { from: "n1", to: "n2" },
         { from: "n2", to: "n8" },
@@ -323,7 +324,7 @@ export default function AIVideoEditorUI() {
         ...n, 
         { id: "n_template", label: template.name, type: "fx", x: 520, y: 220 },
       ]);
-      setEdges(e => e.some(edge => edge.to === 'n_template') ? e : [
+      setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === 'n_template') ? e : [
         ...e,
         { from: "n1", to: "n_template" },
         { from: "n_template", to: "n8" },
@@ -369,7 +370,7 @@ export default function AIVideoEditorUI() {
         ...n,
         { id: 'n_color', label: 'Auto Color', type: 'color', x: 520, y: 140 },
       ]);
-      setEdges(e => e.some(edge => edge.to === 'n_color') ? e : [
+      setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === 'n_color') ? e : [
         ...e,
         { from: 'n1', to: 'n_color' },
         { from: 'n_color', to: 'n8' },
@@ -397,6 +398,13 @@ export default function AIVideoEditorUI() {
     setAssets(assets => assets.map(a => a.id === assetId ? { ...a, ...updatedProps } : a));
     if (selectedAsset?.id === assetId) {
       setSelectedAsset(a => a ? { ...a, ...updatedProps } : null);
+    }
+  };
+  
+  const handleUpdateClip = (clipId: string, updatedProps: Partial<Clip>) => {
+    setClips(clips => clips.map(c => c.id === clipId ? { ...c, ...updatedProps } : c));
+    if (selectedClip?.id === clipId) {
+      setSelectedClip(c => c ? { ...c, ...updatedProps } : null);
     }
   };
 
@@ -439,7 +447,10 @@ export default function AIVideoEditorUI() {
                 onImport={handleImportClick}
                 assets={assets}
                 selectedAsset={selectedAsset}
-                onAssetClick={setSelectedAsset}
+                onAssetClick={(asset) => {
+                  setSelectedAsset(asset);
+                  setSelectedClip(null);
+                }}
                 templates={templates}
                 onTemplateSelect={handleGeneratePunchCutEdit}
               />
@@ -472,6 +483,7 @@ export default function AIVideoEditorUI() {
                 selectedAsset={selectedAsset}
                 selectedClip={selectedClip}
                 onUpdateAsset={handleUpdateAsset}
+                onUpdateClip={handleUpdateClip}
               />
             </ResizablePanel>
           </ResizablePanelGroup>

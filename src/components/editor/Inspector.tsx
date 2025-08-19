@@ -15,32 +15,36 @@ interface InspectorProps {
   selectedAsset: Asset | null;
   selectedClip: Clip | null;
   onUpdateAsset: (assetId: string, updatedProps: Partial<Asset>) => void;
+  onUpdateClip: (clipId: string, updatedProps: Partial<Clip>) => void;
 }
 
-export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, onUpdateAsset }: InspectorProps) {
+export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, onUpdateAsset, onUpdateClip }: InspectorProps) {
   const [tab, setTab] = useState("general");
-  const [assetName, setAssetName] = useState("");
+  const [itemName, setItemName] = useState("");
 
   const item = selectedClip || selectedAsset;
-  const itemType = selectedClip ? 'Clip' : 'Asset';
+  const itemType = selectedClip ? 'Clip' : (selectedAsset ? 'Asset' : null);
 
   useEffect(() => {
-    if (item) {
-      setAssetName(item.name || (item as Clip).label);
+    if (selectedClip) {
+      setItemName(selectedClip.label);
+    } else if (selectedAsset) {
+      setItemName(selectedAsset.name);
     } else {
-      setAssetName("");
+      setItemName("");
     }
-  }, [item]);
+  }, [selectedAsset, selectedClip]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAssetName(e.target.value);
+    setItemName(e.target.value);
   };
   
   const handleNameBlur = () => {
-    if (selectedAsset && !selectedClip && assetName !== selectedAsset.name) {
-      onUpdateAsset(selectedAsset.id, { name: assetName });
+    if (selectedClip && itemName !== selectedClip.label) {
+      onUpdateClip(selectedClip.id, { label: itemName });
+    } else if (selectedAsset && !selectedClip && itemName !== selectedAsset.name) {
+      onUpdateAsset(selectedAsset.id, { name: itemName });
     }
-    // TODO: Update clip label state
   };
 
 
@@ -67,7 +71,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
             <ScrollArea className="h-full">
                 <div className="p-3 space-y-4">
                     <TabsContent value="general" className="mt-0 space-y-4">
-                        <LabeledInput label="Name" placeholder="Item Name" value={assetName} onChange={handleNameChange} onBlur={handleNameBlur} />
+                        <LabeledInput label="Name" placeholder="Item Name" value={itemName} onChange={handleNameChange} onBlur={handleNameBlur} />
                         <LabeledInput label="In/Out" placeholder="00:00:02:12 – 00:00:08:14" />
                         <LabeledInput label="Transform" placeholder="X:0 Y:0 Scale:100%" />
                         <LabeledInput label="Opacity" placeholder="100%" />
@@ -90,7 +94,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
                         <LabeledInput label="Brand Colors" placeholder="#6366F1 / #A855F7" />
                     </TabsContent>
                     <TabsContent value="meta" className="mt-0 space-y-4">
-                        <LabeledInput label="Type" placeholder={itemType} value={itemType} readOnly />
+                        {itemType && <LabeledInput label="Type" placeholder={itemType} value={itemType} readOnly />}
                         {selectedAsset && !selectedClip && (
                           <>
                             <LabeledInput label="Camera" placeholder="FX30 4K24" />
