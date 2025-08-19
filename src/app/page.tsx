@@ -115,9 +115,11 @@ export default function AIVideoEditorUI() {
       if (selectedClip) {
         videoRef.current.style.opacity = `${selectedClip.opacity / 100}`;
         videoRef.current.style.filter = `saturate(${selectedClip.effects.saturation}) contrast(${selectedClip.effects.contrast}) brightness(${selectedClip.effects.exposure})`;
+        videoRef.current.style.transform = `translate(${selectedClip.transform.x}px, ${selectedClip.transform.y}px) scale(${selectedClip.transform.scale / 100})`;
       } else {
         videoRef.current.style.opacity = `1`;
         videoRef.current.style.filter = `saturate(1) contrast(1) brightness(1)`;
+        videoRef.current.style.transform = `translate(0, 0) scale(1)`;
       }
     }
   }, [selectedClip]);
@@ -193,6 +195,7 @@ export default function AIVideoEditorUI() {
             label: newAsset.name,
             color: "bg-primary/50",
             opacity: 100,
+            transform: { x: 0, y: 0, scale: 100 },
             effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
           };
           setClips([newClip]);
@@ -239,6 +242,7 @@ export default function AIVideoEditorUI() {
           label: result.captions.substring(0, 20) + '...',
           color: "bg-pink-500/50",
           opacity: 100,
+          transform: { x: 0, y: 0, scale: 100 },
           effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
         }
         setClips(c => [...c, newCaptionClip]);
@@ -302,6 +306,7 @@ export default function AIVideoEditorUI() {
             label: `Scene ${i + 1}`,
             color: i % 2 === 0 ? "bg-primary/50" : "bg-accent/50",
             opacity: 100,
+            transform: { x: 0, y: 0, scale: 100 },
             effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
           });
         }
@@ -365,6 +370,7 @@ export default function AIVideoEditorUI() {
                   label: `${template.name} ${i + 1}`,
                   color: "bg-purple-500/50",
                   opacity: 100,
+                  transform: { x: 0, y: 0, scale: 100 },
                   effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
               };
           });
@@ -462,7 +468,8 @@ export default function AIVideoEditorUI() {
     setClips(clips => clips.map(c => {
       if (c.id === clipId) {
         const newEffects = { ...c.effects, ...updatedProps.effects };
-        return { ...c, ...updatedProps, effects: newEffects };
+        const newTransform = { ...c.transform, ...updatedProps.transform };
+        return { ...c, ...updatedProps, effects: newEffects, transform: newTransform };
       }
       return c;
     }));
@@ -470,7 +477,8 @@ export default function AIVideoEditorUI() {
       setSelectedClip(c => {
         if (!c) return null;
         const newEffects = { ...c.effects, ...updatedProps.effects };
-        return { ...c, ...updatedProps, effects: newEffects };
+        const newTransform = { ...c.transform, ...updatedProps.transform };
+        return { ...c, ...updatedProps, effects: newEffects, transform: newTransform };
       });
     }
   };

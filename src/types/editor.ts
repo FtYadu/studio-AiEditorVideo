@@ -42,6 +42,11 @@ export interface Clip {
   label: string;
   color: string;
   opacity: number;
+  transform: {
+    x: number;
+    y: number;
+    scale: number;
+  };
   effects: {
     saturation: number;
     contrast: number;
