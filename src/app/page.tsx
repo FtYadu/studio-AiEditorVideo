@@ -104,6 +104,18 @@ export default function AIVideoEditorUI() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  useEffect(() => {
+    if (videoRef.current) {
+      if (selectedClip) {
+        videoRef.current.style.opacity = `${selectedClip.opacity / 100}`;
+        videoRef.current.style.filter = `saturate(${selectedClip.effects.saturation})`;
+      } else {
+        videoRef.current.style.opacity = `1`;
+        videoRef.current.style.filter = `saturate(1)`;
+      }
+    }
+  }, [selectedClip]);
+
   const handlePlayToggle = () => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -465,6 +477,7 @@ export default function AIVideoEditorUI() {
                 selectedAsset={selectedAsset}
                 onAssetClick={(asset) => {
                   setSelectedAsset(asset);
+                  if (videoRef.current) videoRef.current.src = asset.url;
                   setSelectedClip(null);
                 }}
                 templates={templates}
@@ -488,7 +501,10 @@ export default function AIVideoEditorUI() {
                 edges={edges}
                 setEdges={setEdges}
                 selectedClip={selectedClip}
-                onClipSelected={setSelectedClip}
+                onClipSelected={(clip) => {
+                  if (selectedAsset) videoRef.current!.src = selectedAsset.url;
+                  setSelectedClip(clip)
+                }}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -525,3 +541,5 @@ export default function AIVideoEditorUI() {
     </TooltipProvider>
   );
 }
+
+    

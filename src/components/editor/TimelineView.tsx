@@ -18,7 +18,7 @@ interface TimelineViewProps {
   clips: Clip[];
   totalDuration: number;
   selectedClip: Clip | null;
-  onClipSelected: (clip: Clip) => void;
+  onClipSelected: (clip: Clip | null) => void;
 }
 
 export function TimelineView({ 
@@ -65,6 +65,15 @@ export function TimelineView({
     onSeek(newTime);
   };
   
+  const handleClipClick = (e: React.MouseEvent, clip: Clip) => {
+    e.stopPropagation(); // Prevent timeline click from firing
+    onClipSelected(clip);
+  }
+
+  const handleTrackClick = () => {
+    onClipSelected(null);
+  }
+  
 
   const timelineWidth = `calc(${totalDuration * (zoom / 2)}px)`;
 
@@ -83,7 +92,7 @@ export function TimelineView({
                           ref={videoRef}
                           src={selectedAsset.url} 
                           onLoadedMetadata={onTimeUpdate}
-                          className="w-full h-full object-contain" 
+                          className="w-full h-full object-contain transition-all duration-200" 
                         />
                       ) : (
                         <div className="w-full h-full bg-black grid place-content-center">
@@ -119,7 +128,7 @@ export function TimelineView({
                 </div>
               </div>
 
-              <div className="flex-1 overflow-auto relative">
+              <div className="flex-1 overflow-auto relative" onClick={handleTrackClick}>
                 <div 
                   className="h-8 sticky top-0 z-10 bg-secondary/80 backdrop-blur-sm text-[10px] text-muted-foreground flex items-end pl-16 border-b border-border cursor-pointer" 
                   style={{ width: timelineWidth }}
@@ -139,11 +148,11 @@ export function TimelineView({
                         {clips.filter((c) => c.trackId === t.id).map((c) => (
                           <div 
                               key={c.id} 
-                              onClick={() => onClipSelected(c)}
+                              onClick={(e) => handleClipClick(e, c)}
                               className={cn(
                                 "absolute h-8 rounded-md border flex items-center px-2 text-xs text-white backdrop-blur-sm shadow-md overflow-hidden cursor-pointer",
                                 c.color,
-                                selectedClip?.id === c.id ? "border-yellow-400" : "border-black/20"
+                                selectedClip?.id === c.id ? "border-yellow-400 ring-2 ring-yellow-400" : "border-black/20"
                               )}
                               style={{ 
                                 left: `${(c.start / totalDuration) * 100}%`, 
@@ -165,3 +174,5 @@ export function TimelineView({
     </div>
   );
 }
+
+    

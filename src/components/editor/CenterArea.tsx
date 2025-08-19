@@ -25,7 +25,7 @@ interface CenterAreaProps {
   edges: EdgeItem[];
   setEdges: React.Dispatch<React.SetStateAction<EdgeItem[]>>;
   selectedClip: Clip | null;
-  onClipSelected: (clip: Clip) => void;
+  onClipSelected: (clip: Clip | null) => void;
 }
 
 export function CenterArea({ 
@@ -80,3 +80,5 @@ export function CenterArea({
     </div>
   );
 }
+
+    
