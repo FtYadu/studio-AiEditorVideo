@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,6 +9,7 @@ import { LabeledInput, TooltipWrap } from "./ui-helpers";
 import type { Asset, Clip } from "@/types/editor";
 import { Input } from "../ui/input";
 import { Slider } from "../ui/slider";
+import { Textarea } from "../ui/textarea";
 
 interface InspectorProps {
   collapsed: boolean;
@@ -29,6 +29,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
   const [opacity, setOpacity] = useState(100);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 100 });
   const [volume, setVolume] = useState(100);
+  const [captionText, setCaptionText] = useState("");
   
   // Effect states
   const [saturation, setSaturation] = useState(1.0);
@@ -37,6 +38,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
   const [lut, setLut] = useState<string | null>(null);
 
   const item = selectedClip || selectedAsset;
+  const isCaption = selectedClip?.trackId.includes('cap');
 
   useEffect(() => {
     if (selectedClip) {
@@ -48,6 +50,10 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
       setContrast(selectedClip.effects.contrast);
       setExposure(selectedClip.effects.exposure);
       setLut(selectedClip.effects.lut);
+      setCaptionText(selectedClip.text || "");
+      if (isCaption) {
+        setTab("general");
+      }
     } else if (selectedAsset) {
       setItemName(selectedAsset.name);
       // Reset states when only an asset is selected
@@ -58,10 +64,11 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
       setContrast(1.0);
       setExposure(1.0);
       setLut(null);
+      setCaptionText("");
     } else {
       setItemName("");
     }
-  }, [selectedAsset, selectedClip]);
+  }, [selectedAsset, selectedClip, isCaption]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setItemName(e.target.value);
@@ -92,6 +99,11 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
     setVolume(newVolume);
     handleUpdate('clip', { volume: newVolume });
   };
+  
+  const handleCaptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setCaptionText(e.target.value);
+      handleUpdate('clip', { text: e.target.value });
+  };
 
   return (
     <div className="h-full flex flex-col bg-secondary/20">
@@ -107,8 +119,8 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
         <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col min-h-0">
           <TabsList className="m-2 bg-background/50 border-border">
             <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="effect">Effect</TabsTrigger>
-            <TabsTrigger value="audio">Audio</TabsTrigger>
+            {!isCaption && <TabsTrigger value="effect">Effect</TabsTrigger>}
+            {!isCaption && <TabsTrigger value="audio">Audio</TabsTrigger>}
           </TabsList>
           <div className="flex-1 min-h-0">
             <ScrollArea className="h-full">
@@ -122,18 +134,27 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
                             </Button>
                           </TooltipWrap>
                         </div>
-                        <div>
-                          <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Transform</div>
-                          <div className="grid grid-cols-3 gap-2">
-                            <Input type="number" className="bg-transparent border-input" placeholder="X" value={transform.x} onChange={(e) => handleTransformChange('x', e.target.value)} disabled={!selectedClip} />
-                            <Input type="number" className="bg-transparent border-input" placeholder="Y" value={transform.y} onChange={(e) => handleTransformChange('y', e.target.value)} disabled={!selectedClip} />
-                            <Input type="number" className="bg-transparent border-input" placeholder="Scale" value={transform.scale} onChange={(e) => handleTransformChange('scale', e.target.value)} disabled={!selectedClip} />
+                        {isCaption ? (
+                            <div>
+                                <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Caption Text</div>
+                                <Textarea value={captionText} onChange={handleCaptionChange} className="bg-transparent border-input h-40" />
+                            </div>
+                        ) : (
+                        <>
+                          <div>
+                            <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Transform</div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <Input type="number" className="bg-transparent border-input" placeholder="X" value={transform.x} onChange={(e) => handleTransformChange('x', e.target.value)} disabled={!selectedClip} />
+                              <Input type="number" className="bg-transparent border-input" placeholder="Y" value={transform.y} onChange={(e) => handleTransformChange('y', e.target.value)} disabled={!selectedClip} />
+                              <Input type="number" className="bg-transparent border-input" placeholder="Scale" value={transform.scale} onChange={(e) => handleTransformChange('scale', e.target.value)} disabled={!selectedClip} />
+                            </div>
                           </div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Opacity</div>
-                          <Input type="number" min="0" max="100" className="bg-transparent border-input" placeholder="100" value={opacity} onChange={(e) => { const val = parseInt(e.target.value, 10); setOpacity(val); handleUpdate('clip', { opacity: val }); }} disabled={!selectedClip} />
-                        </div>
+                          <div>
+                            <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Opacity</div>
+                            <Input type="number" min="0" max="100" className="bg-transparent border-input" placeholder="100" value={opacity} onChange={(e) => { const val = parseInt(e.target.value, 10); setOpacity(val); handleUpdate('clip', { opacity: val }); }} disabled={!selectedClip} />
+                          </div>
+                        </>
+                        )}
                     </TabsContent>
                     <TabsContent value="effect" className="mt-0 space-y-4">
                         <LabeledInput label="LUT" placeholder="none" value={lut || 'none'} readOnly disabled={!selectedClip} />

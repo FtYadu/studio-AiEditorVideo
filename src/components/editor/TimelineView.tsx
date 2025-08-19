@@ -58,6 +58,7 @@ interface TimelineViewProps {
   assets: Asset[];
   onToggleTrackMute: (trackId: string) => void;
   onToggleTrackSolo: (trackId: string) => void;
+  activeCaption: string;
 }
 
 export function TimelineView({ 
@@ -76,6 +77,7 @@ export function TimelineView({
   assets,
   onToggleTrackMute,
   onToggleTrackSolo,
+  activeCaption,
 }: TimelineViewProps) {
   const [zoom, setZoom] = useState(80);
   const timelineContainerRef = useRef<HTMLDivElement>(null);
@@ -283,6 +285,13 @@ export function TimelineView({
                       <div className="absolute inset-0 border-8 border-black/30 pointer-events-none"></div>
                       <div className="absolute inset-8 border border-white/10 rounded pointer-events-none"></div>
                       <div className="absolute bottom-4 left-4 text-xs bg-black/50 px-2 py-1 rounded">Preview (Draft)</div>
+                      {activeCaption && (
+                          <div className="absolute bottom-16 w-full text-center px-8">
+                              <p className="text-2xl font-bold text-white bg-black/50 p-2 rounded" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+                                  {activeCaption}
+                              </p>
+                          </div>
+                      )}
                     </div>
                   </div>
                 </ResizablePanel>
@@ -352,7 +361,7 @@ export function TimelineView({
                                   top: 8 
                                 }}>
                               <div className="absolute inset-0 z-0">
-                                {asset?.waveform && asset.waveform.length > 0 && (
+                                {asset?.waveform && asset.waveform.length > 0 && t.type !== 'caption' && (
                                     <Waveform 
                                         data={asset.waveform}
                                         width={(clip.dur * pixelsPerSecond)}
@@ -368,6 +377,7 @@ export function TimelineView({
                                     onMouseDown={(e) => handleTrimHandleMouseDown(e, clip, 'trim-start')}
                                  />
                                 <span className="truncate pointer-events-none">{clip.label}</span>
+                                {t.type === 'caption' && <span className="truncate pointer-events-none ml-2 italic opacity-80">{clip.text?.substring(0, 50)}...</span>}
                                 <div 
                                     className="absolute right-0 top-0 h-full w-2 cursor-ew-resize z-20"
                                     style={{right: -8}}

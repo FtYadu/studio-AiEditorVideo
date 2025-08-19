@@ -58,6 +58,7 @@ export interface Clip {
     exposure: number;
     lut: string | null;
   };
+  text?: string;
 }
 
 export interface Track {

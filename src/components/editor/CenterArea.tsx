@@ -32,6 +32,7 @@ interface CenterAreaProps {
   assets: Asset[];
   onToggleTrackMute: (trackId: string) => void;
   onToggleTrackSolo: (trackId: string) => void;
+  activeCaption: string;
 }
 
 export function CenterArea({ 
@@ -56,6 +57,7 @@ export function CenterArea({
   assets,
   onToggleTrackMute,
   onToggleTrackSolo,
+  activeCaption,
 }: CenterAreaProps) {
   return (
     <div className="h-full flex flex-col bg-background">
@@ -92,6 +94,7 @@ export function CenterArea({
             assets={assets}
             onToggleTrackMute={onToggleTrackMute}
             onToggleTrackSolo={onToggleTrackSolo}
+            activeCaption={activeCaption}
           />
         )}
       </div>

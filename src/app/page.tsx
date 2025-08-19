@@ -20,6 +20,7 @@ import { autoColor } from "@/ai/flows/auto-color";
 import { categorizeAsset } from "@/ai/flows/categorize-asset";
 import { generateWaveform } from "@/ai/flows/generate-waveform";
 import { useToast } from "@/hooks/use-toast";
+import { getLutFilter } from "@/lib/lut-filters";
 
 const templates: Template[] = [
     { 
@@ -66,6 +67,8 @@ export default function AIVideoEditorUI() {
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   const [edges, setEdges] = useState<EdgeItem[]>([]);
   const [bladeMode, setBladeMode] = useState(false);
+  const [activeCaption, setActiveCaption] = useState<string>('');
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -141,8 +144,10 @@ export default function AIVideoEditorUI() {
       }
 
       if (selectedClip) {
+        const { saturation, contrast, exposure, lut } = selectedClip.effects;
+        const lutFilter = getLutFilter(lut) || '';
         videoRef.current.style.opacity = `${selectedClip.opacity / 100}`;
-        videoRef.current.style.filter = `saturate(${selectedClip.effects.saturation}) contrast(${selectedClip.effects.contrast}) brightness(${selectedClip.effects.exposure})`;
+        videoRef.current.style.filter = `saturate(${saturation}) contrast(${contrast}) brightness(${exposure}) ${lutFilter}`;
         videoRef.current.style.transform = `translate(${selectedClip.transform.x}px, ${selectedClip.transform.y}px) scale(${selectedClip.transform.scale / 100})`;
         videoRef.current.volume = isMuted ? 0 : selectedClip.volume / 100;
       } else {
@@ -177,9 +182,14 @@ export default function AIVideoEditorUI() {
         const time = videoRef.current.currentTime;
         setTimecode(formatTime(time));
         
-        // This is a basic implementation. For multiple audio tracks, you'd need multiple audio elements.
         const activeClip = clips.find(c => time >= c.start && time < c.start + c.dur);
         setSelectedClip(activeClip || null);
+
+        const captionTrack = tracks.find(t => t.type === 'caption');
+        if (captionTrack) {
+            const activeCaptionClip = clips.find(c => c.trackId === captionTrack.id && time >= c.start && time < c.start + c.dur);
+            setActiveCaption(activeCaptionClip?.text || '');
+        }
     }
   };
 
@@ -310,7 +320,8 @@ export default function AIVideoEditorUI() {
           dur: selectedAsset.duration,
           inPoint: 0,
           outPoint: selectedAsset.duration,
-          label: result.captions.substring(0, 20) + '...',
+          label: 'Caption',
+          text: result.captions,
           color: "bg-pink-500/50",
           opacity: 100,
           volume: 100,
@@ -501,6 +512,7 @@ export default function AIVideoEditorUI() {
 
       handleUpdateClip(selectedClip.id, {
         effects: {
+            ...selectedClip.effects,
             exposure: result.exposure,
             contrast: result.contrast,
             saturation: result.saturation,
@@ -543,8 +555,8 @@ export default function AIVideoEditorUI() {
   const handleUpdateClip = (clipId: string, updatedProps: Partial<Clip>) => {
     setClips(clips => clips.map(c => {
       if (c.id === clipId) {
-        const newEffects = { ...c.effects, ...updatedProps.effects };
-        const newTransform = { ...c.transform, ...updatedProps.transform };
+        const newEffects = updatedProps.effects ? { ...c.effects, ...updatedProps.effects } : c.effects;
+        const newTransform = updatedProps.transform ? { ...c.transform, ...updatedProps.transform } : c.transform;
         return { ...c, ...updatedProps, effects: newEffects, transform: newTransform };
       }
       return c;
@@ -552,8 +564,8 @@ export default function AIVideoEditorUI() {
     if (selectedClip?.id === clipId) {
       setSelectedClip(c => {
         if (!c) return null;
-        const newEffects = { ...c.effects, ...updatedProps.effects };
-        const newTransform = { ...c.transform, ...updatedProps.transform };
+        const newEffects = updatedProps.effects ? { ...c.effects, ...updatedProps.effects } : c.effects;
+        const newTransform = updatedProps.transform ? { ...c.transform, ...updatedProps.transform } : c.transform;
         return { ...c, ...updatedProps, effects: newEffects, transform: newTransform };
       });
     }
@@ -698,6 +710,7 @@ export default function AIVideoEditorUI() {
                 assets={assets}
                 onToggleTrackMute={handleToggleTrackMute}
                 onToggleTrackSolo={handleToggleTrackSolo}
+                activeCaption={activeCaption}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
