@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -11,7 +12,7 @@ import { Transport } from "@/components/editor/Transport";
 import { CommandMenu } from "@/components/editor/CommandMenu";
 import { ExportDialog } from "@/components/editor/ExportDialog";
 import { Captions, Download, FolderOpen, Layers, MonitorDown, Wand2, Workflow } from "lucide-react";
-import type { CommandAction, Asset } from "@/types/editor";
+import type { CommandAction, Asset, Track, Clip } from "@/types/editor";
 import { autoCaption } from "@/ai/flows/auto-captioning";
 import { autoSceneDetection } from "@/ai/flows/auto-scene-detection";
 import { useToast } from "@/hooks/use-toast";
@@ -29,9 +30,23 @@ export default function AIVideoEditorUI() {
   const [projectName, setProjectName] = useState("AIVidFlow Project");
   const [assets, setAssets] = useState<Asset[]>([]);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [clips, setClips] = useState<Clip[]>([]);
+  const [totalDuration, setTotalDuration] = useState(20);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  
+  const formatTime = (time: number) => {
+    const fps = 25;
+    const totalFrames = Math.floor(time * fps);
+    const hours = Math.floor(totalFrames / (3600 * fps)).toString().padStart(2, '0');
+    const minutes = Math.floor((totalFrames % (3600 * fps)) / (60 * fps)).toString().padStart(2, '0');
+    const seconds = Math.floor((totalFrames % (60 * fps)) / fps).toString().padStart(2, '0');
+    const frames = (totalFrames % fps).toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}:${frames}`;
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -44,7 +59,7 @@ export default function AIVideoEditorUI() {
       const isInput = ["INPUT", "TEXTAREA"].includes(target?.tagName || "");
       if (!isInput && e.key === " ") {
         e.preventDefault();
-        setIsPlaying((p) => !p);
+        handlePlayToggle();
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "1") {
         e.preventDefault();
@@ -59,6 +74,23 @@ export default function AIVideoEditorUI() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  const handlePlayToggle = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setTimecode(formatTime(videoRef.current.currentTime));
+    }
+  };
+  
   const handleImportClick = () => {
     fileInputRef.current?.click();
   };
@@ -68,37 +100,85 @@ export default function AIVideoEditorUI() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const newAsset: Asset = {
-          id: `asset-${Date.now()}`,
-          name: file.name,
-          type: file.type.startsWith('video') ? 'video' : 'audio',
-          url: e.target?.result as string,
-        };
-        setAssets((prevAssets) => [...prevAssets, newAsset]);
-        setSelectedAsset(newAsset);
-        toast({
-          title: "✅ Asset Imported",
-          description: `${file.name} has been added to your project.`,
-        });
+        const videoUrl = e.target?.result as string;
+        const videoEl = document.createElement('video');
+        videoEl.src = videoUrl;
+        videoEl.onloadedmetadata = () => {
+          const newAsset: Asset = {
+            id: `asset-${Date.now()}`,
+            name: file.name,
+            type: file.type.startsWith('video') ? 'video' : 'audio',
+            url: videoUrl,
+            duration: videoEl.duration,
+          };
+          setAssets((prevAssets) => [...prevAssets, newAsset]);
+          setSelectedAsset(newAsset);
+          setTotalDuration(videoEl.duration);
+
+          const videoTrack: Track = { id: 'track-v1', name: 'V1', type: 'video' };
+          const audioTrack: Track = { id: 'track-a1', name: 'A1', type: 'audio' };
+          const captionTrack: Track = { id: 'track-cap1', name: 'CAP', type: 'caption' };
+          setTracks([videoTrack, audioTrack, captionTrack]);
+
+          const newClip: Clip = {
+            id: `clip-${Date.now()}`,
+            assetId: newAsset.id,
+            trackId: videoTrack.id,
+            start: 0,
+            dur: videoEl.duration,
+            inPoint: 0,
+            label: newAsset.name,
+            color: "bg-primary/50",
+          };
+          setClips([newClip]);
+          
+          toast({
+            title: "✅ Asset Imported",
+            description: `${file.name} has been added to your project.`,
+          });
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleAutoCaption = async () => {
-    // TODO: Replace with actual audio data from the selected video clip.
-    // This is a placeholder data URI for a silent audio clip.
+    if (!selectedAsset || selectedAsset.type !== 'video') {
+       toast({
+        variant: "destructive",
+        title: "🚫 No Video Selected",
+        description: "Please import and select a video asset first.",
+      });
+      return;
+    }
+    // This is a placeholder for extracting audio.
+    // A real implementation would use a library like ffmpeg.wasm to extract audio.
     const audioDataUri = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
     
     toast({ title: "🤖 Starting Auto-Caption", description: "The AI is analyzing the audio track..." });
     try {
       const result = await autoCaption({ audioDataUri });
       console.log("Auto-caption result:", result);
+      
+      const captionTrack = tracks.find(t => t.type === 'caption');
+      if (captionTrack) {
+        const newCaptionClip: Clip = {
+          id: `clip-${Date.now()}`,
+          assetId: selectedAsset.id,
+          trackId: captionTrack.id,
+          start: 0,
+          dur: selectedAsset.duration || totalDuration,
+          inPoint: 0,
+          label: result.captions.substring(0, 20) + '...',
+          color: "bg-pink-500/50"
+        }
+        setClips(c => [...c, newCaptionClip]);
+      }
+
       toast({
         title: "✅ Captions Generated",
         description: "The caption track has been added to your timeline.",
       });
-      // TODO: Add the generated captions to the timeline state.
     } catch (error) {
       console.error("Auto-caption failed:", error);
       toast({
@@ -122,12 +202,34 @@ export default function AIVideoEditorUI() {
     toast({ title: "🤖 Detecting Scenes", description: "The AI is analyzing the video..." });
     try {
       const result = await autoSceneDetection({ videoDataUri: selectedAsset.url });
-      console.log("Auto-scene detection result:", result);
+      
+      const videoTrack = tracks.find(t => t.type === 'video');
+      if (videoTrack && selectedAsset.duration) {
+        const sceneTimestamps = [0, ...result.sceneTimestamps, selectedAsset.duration];
+        const newClips: Clip[] = [];
+        for (let i = 0; i < sceneTimestamps.length - 1; i++) {
+          const start = sceneTimestamps[i];
+          const end = sceneTimestamps[i + 1];
+          const dur = end - start;
+          newClips.push({
+            id: `clip-${selectedAsset.id}-${i}`,
+            assetId: selectedAsset.id,
+            trackId: videoTrack.id,
+            start: start,
+            dur: dur,
+            inPoint: start,
+            label: `Scene ${i + 1}`,
+            color: i % 2 === 0 ? "bg-primary/50" : "bg-accent/50",
+          });
+        }
+        setClips(currentClips => [...currentClips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
+      }
+
       toast({
         title: "✅ Scene Detection Complete",
-        description: `Found ${result.sceneTimestamps.length} scenes.`,
+        description: `Found ${result.sceneTimestamps.length} scenes and created clips.`,
       });
-      // TODO: Use the timestamps to create clips in the timeline.
+
     } catch (error) {
       console.error("Auto-scene detection failed:", error);
       toast({
@@ -179,7 +281,16 @@ export default function AIVideoEditorUI() {
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={64} minSize={40}>
-              <CenterArea mode={mode} setMode={setMode} selectedAsset={selectedAsset} />
+              <CenterArea 
+                mode={mode} 
+                setMode={setMode} 
+                selectedAsset={selectedAsset}
+                videoRef={videoRef}
+                onTimeUpdate={handleTimeUpdate}
+                tracks={tracks}
+                clips={clips}
+                totalDuration={totalDuration}
+              />
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={collapsedRight ? 4 : 18} minSize={4} maxSize={28}>
@@ -190,7 +301,7 @@ export default function AIVideoEditorUI() {
 
         <Transport
           isPlaying={isPlaying}
-          onPlayToggle={() => setIsPlaying((p) => !p)}
+          onPlayToggle={handlePlayToggle}
           timecode={timecode}
           setTimecode={setTimecode}
           mode={mode}

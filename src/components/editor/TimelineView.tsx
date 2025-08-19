@@ -1,38 +1,52 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Scissors } from "lucide-react";
-import { useState } from "react";
-import type { Asset } from "@/types/editor";
-
-// Dummy Resizable components to avoid errors if not present
-const ResizablePanelGroup = ({ direction, children }: { direction: "vertical" | "horizontal", children: React.ReactNode }) => <div className={`flex ${direction === 'vertical' ? 'flex-col' : ''} h-full w-full`}>{children}</div>;
-const ResizablePanel = ({ defaultSize, minSize, children }: { defaultSize: number, minSize?: number, children: React.ReactNode }) => <div style={{ flexGrow: defaultSize, flexShrink: 0, flexBasis: 0 }}>{children}</div>;
-const ResizableHandle = ({ withHandle }: { withHandle?: boolean }) => <div className="w-1 h-full bg-border cursor-col-resize hover:bg-primary" />;
-
+import { useState, useRef, useEffect } from "react";
+import type { Asset, Clip, Track } from "@/types/editor";
+import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable";
 
 interface TimelineViewProps {
   selectedAsset: Asset | null;
+  videoRef: React.RefObject<HTMLVideoElement>;
+  onTimeUpdate: () => void;
+  tracks: Track[];
+  clips: Clip[];
+  totalDuration: number;
 }
 
-export function TimelineView({ selectedAsset }: TimelineViewProps) {
+export function TimelineView({ 
+  selectedAsset, 
+  videoRef, 
+  onTimeUpdate, 
+  tracks, 
+  clips, 
+  totalDuration 
+}: TimelineViewProps) {
   const [zoom, setZoom] = useState(80);
-  const tracks = [
-    { name: "V1", type: "video" },
-    { name: "V2", type: "video" },
-    { name: "A1", type: "audio" },
-    { name: "A2", type: "audio" },
-    { name: "CAP", type: "caption" },
-  ];
-  const clips = [
-    { track: 0, start: 2, dur: 6, label: "Intro", color: "bg-primary/50" },
-    { track: 0, start: 9, dur: 4, label: "Cutaway", color: "bg-accent/50" },
-    { track: 1, start: 3, dur: 4, label: "B‑roll", color: "bg-blue-500/50" },
-    { track: 2, start: 2, dur: 12, label: "Music", color: "bg-green-500/50" },
-    { track: 4, start: 2.2, dur: 6.5, label: "Captions", color: "bg-pink-500/50" },
-  ];
-  const total = 20;
+  const timelineRulerRef = useRef<HTMLDivElement>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const updatePlayhead = () => {
+      if (video && playheadRef.current && timelineRulerRef.current) {
+        const percentage = (video.currentTime / totalDuration) * 100;
+        playheadRef.current.style.left = `${percentage}%`;
+      }
+      onTimeUpdate();
+    };
+
+    video.addEventListener("timeupdate", updatePlayhead);
+    return () => video.removeEventListener("timeupdate", updatePlayhead);
+  }, [videoRef, totalDuration, onTimeUpdate]);
+  
+
+  const timelineWidth = `calc(${totalDuration * (zoom / 2)}px)`;
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -42,12 +56,20 @@ export function TimelineView({ selectedAsset }: TimelineViewProps) {
             <div className="h-full flex">
               <ResizablePanelGroup direction="horizontal">
                 <ResizablePanel defaultSize={75}>
-                  <div className="h-full flex items-center justify-center p-4">
+                  <div className="h-full flex items-center justify-center p-4 bg-black">
                     <div className="aspect-video w-full max-w-full h-auto max-h-full rounded-lg border-2 border-primary bg-black relative overflow-hidden">
                       {selectedAsset && selectedAsset.type === 'video' ? (
-                        <video src={selectedAsset.url} controls className="w-full h-full object-contain" />
+                        <video 
+                          ref={videoRef}
+                          src={selectedAsset.url} 
+                          onTimeUpdate={onTimeUpdate}
+                          onLoadedMetadata={onTimeUpdate}
+                          className="w-full h-full object-contain" 
+                        />
                       ) : (
-                        <img src="https://placehold.co/1280x720" alt="Video Preview" className="w-full h-full object-contain" data-ai-hint="video preview screen" />
+                        <div className="w-full h-full bg-black grid place-content-center">
+                          <img src="https://placehold.co/1280x720" alt="Video Preview" className="w-full h-full object-contain" data-ai-hint="video preview screen" />
+                        </div>
                       )}
                       <div className="absolute inset-0 border-8 border-black/30 pointer-events-none"></div>
                       <div className="absolute inset-8 border border-white/10 rounded pointer-events-none"></div>
@@ -78,22 +100,28 @@ export function TimelineView({ selectedAsset }: TimelineViewProps) {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-auto relative">
-                <div className="h-8 sticky top-0 z-10 bg-secondary/80 backdrop-blur-sm text-[10px] text-muted-foreground flex items-end pl-16 border-b border-border">
-                  {Array.from({ length: total + 1 }).map((_, i) => (
-                    <div key={i} className="w-24 border-l border-border h-full flex items-end pb-1">{i}s</div>
+              <div className="flex-1 overflow-auto relative" ref={timelineRulerRef}>
+                 <div ref={playheadRef} className="absolute top-0 z-20 w-0.5 h-full bg-red-500 pointer-events-none" />
+
+                <div className="h-8 sticky top-0 z-10 bg-secondary/80 backdrop-blur-sm text-[10px] text-muted-foreground flex items-end pl-16 border-b border-border" style={{ width: timelineWidth }}>
+                  {Array.from({ length: Math.ceil(totalDuration) + 1 }).map((_, i) => (
+                    <div key={i} className="border-l border-border h-full flex items-end pb-1" style={{width: `${1 * (zoom/2)}px`}}>{i}s</div>
                   ))}
                 </div>
                 
-                <div className="relative">
-                  {tracks.map((t, ti) => (
-                    <div key={ti} className="h-12 flex border-b border-border/50">
-                      <div className="w-16 shrink-0 grid place-items-center text-xs text-muted-foreground bg-secondary/50 border-r border-border font-headline">{t.name}</div>
+                <div className="relative" style={{ width: timelineWidth }}>
+                  {tracks.map((t) => (
+                    <div key={t.id} className="h-12 flex border-b border-border/50">
+                      <div className="w-16 shrink-0 grid place-items-center text-xs text-muted-foreground bg-secondary/50 border-r border-border font-headline sticky left-0">{t.name}</div>
                       <div className="flex-1 relative">
-                        {clips.filter((c) => c.track === ti).map((c, ci) => (
-                          <div key={ci} className={`absolute h-8 rounded-md border border-black/20 ${c.color} flex items-center px-2 text-xs text-white backdrop-blur-sm shadow-md`}
-                              style={{ left: `${(c.start / total) * (zoom/10 + 100)}%`, width: `${(c.dur / total) * (zoom/10 + 100)}%`, top: 8 }}>
-                            {c.label}
+                        {clips.filter((c) => c.trackId === t.id).map((c) => (
+                          <div key={c.id} className={`absolute h-8 rounded-md border border-black/20 ${c.color} flex items-center px-2 text-xs text-white backdrop-blur-sm shadow-md overflow-hidden`}
+                              style={{ 
+                                left: `${(c.start / totalDuration) * 100}%`, 
+                                width: `${(c.dur / totalDuration) * 100}%`, 
+                                top: 8 
+                              }}>
+                            <span className="truncate">{c.label}</span>
                           </div>
                         ))}
                       </div>

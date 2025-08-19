@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -6,15 +7,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Cpu, Layers, Workflow } from "lucide-react";
 import { NodeCanvas } from "./NodeCanvas";
 import { TimelineView } from "./TimelineView";
-import type { Asset } from "@/types/editor";
+import type { Asset, Clip, Track } from "@/types/editor";
+import React from "react";
 
 interface CenterAreaProps {
   mode: "workflow" | "edit";
   setMode: (m: "workflow" | "edit") => void;
   selectedAsset: Asset | null;
+  videoRef: React.RefObject<HTMLVideoElement>;
+  onTimeUpdate: () => void;
+  tracks: Track[];
+  clips: Clip[];
+  totalDuration: number;
 }
 
-export function CenterArea({ mode, setMode, selectedAsset }: CenterAreaProps) {
+export function CenterArea({ 
+  mode, 
+  setMode, 
+  selectedAsset, 
+  videoRef,
+  onTimeUpdate,
+  tracks,
+  clips,
+  totalDuration
+}: CenterAreaProps) {
   return (
     <div className="h-full flex flex-col bg-background">
       <div className="h-12 border-b border-border flex items-center px-3 gap-3 bg-secondary/20">
@@ -31,7 +47,18 @@ export function CenterArea({ mode, setMode, selectedAsset }: CenterAreaProps) {
         </div>
       </div>
       <div className="flex-1 min-h-0">
-        {mode === "workflow" ? <NodeCanvas /> : <TimelineView selectedAsset={selectedAsset} />}
+        {mode === "workflow" ? (
+          <NodeCanvas /> 
+        ) : (
+          <TimelineView 
+            selectedAsset={selectedAsset} 
+            videoRef={videoRef}
+            onTimeUpdate={onTimeUpdate}
+            tracks={tracks}
+            clips={clips}
+            totalDuration={totalDuration}
+          />
+        )}
       </div>
     </div>
   );
