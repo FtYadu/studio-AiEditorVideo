@@ -40,6 +40,10 @@ export interface Clip {
   inPoint: number;
   label: string;
   color: string;
+  opacity: number;
+  effects: {
+    saturation: number;
+  };
 }
 
 export interface Track {

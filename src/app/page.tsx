@@ -167,6 +167,8 @@ export default function AIVideoEditorUI() {
             inPoint: 0,
             label: newAsset.name,
             color: "bg-primary/50",
+            opacity: 100,
+            effects: { saturation: 1.0 },
           };
           setClips([newClip]);
           
@@ -210,7 +212,9 @@ export default function AIVideoEditorUI() {
           dur: selectedAsset.duration || totalDuration,
           inPoint: 0,
           label: result.captions.substring(0, 20) + '...',
-          color: "bg-pink-500/50"
+          color: "bg-pink-500/50",
+          opacity: 100,
+          effects: { saturation: 1.0 },
         }
         setClips(c => [...c, newCaptionClip]);
       }
@@ -272,6 +276,8 @@ export default function AIVideoEditorUI() {
             inPoint: start,
             label: `Scene ${i + 1}`,
             color: i % 2 === 0 ? "bg-primary/50" : "bg-accent/50",
+            opacity: 100,
+            effects: { saturation: 1.0 },
           });
         }
         setClips(currentClips => [...currentClips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
@@ -402,9 +408,19 @@ export default function AIVideoEditorUI() {
   };
   
   const handleUpdateClip = (clipId: string, updatedProps: Partial<Clip>) => {
-    setClips(clips => clips.map(c => c.id === clipId ? { ...c, ...updatedProps } : c));
+    setClips(clips => clips.map(c => {
+      if (c.id === clipId) {
+        const newEffects = { ...c.effects, ...updatedProps.effects };
+        return { ...c, ...updatedProps, effects: newEffects };
+      }
+      return c;
+    }));
     if (selectedClip?.id === clipId) {
-      setSelectedClip(c => c ? { ...c, ...updatedProps } : null);
+      setSelectedClip(c => {
+        if (!c) return null;
+        const newEffects = { ...c.effects, ...updatedProps.effects };
+        return { ...c, ...updatedProps, effects: newEffects };
+      });
     }
   };
 

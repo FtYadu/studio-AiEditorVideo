@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PanelLeft, PanelRight } from "lucide-react";
 import { LabeledInput, TooltipWrap } from "./ui-helpers";
 import type { Asset, Clip } from "@/types/editor";
+import { Input } from "../ui/input";
 
 interface InspectorProps {
   collapsed: boolean;
@@ -21,6 +22,9 @@ interface InspectorProps {
 export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, onUpdateAsset, onUpdateClip }: InspectorProps) {
   const [tab, setTab] = useState("general");
   const [itemName, setItemName] = useState("");
+  
+  const [opacity, setOpacity] = useState(100);
+  const [saturation, setSaturation] = useState(1.0);
 
   const item = selectedClip || selectedAsset;
   const itemType = selectedClip ? 'Clip' : (selectedAsset ? 'Asset' : null);
@@ -28,8 +32,12 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
   useEffect(() => {
     if (selectedClip) {
       setItemName(selectedClip.label);
+      setOpacity(selectedClip.opacity);
+      setSaturation(selectedClip.effects.saturation);
     } else if (selectedAsset) {
       setItemName(selectedAsset.name);
+      setOpacity(100);
+      setSaturation(1.0);
     } else {
       setItemName("");
     }
@@ -47,6 +55,21 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
     }
   };
 
+  const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value, 10);
+    setOpacity(val);
+    if (selectedClip) {
+      onUpdateClip(selectedClip.id, { opacity: val });
+    }
+  };
+
+  const handleSaturationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    setSaturation(val);
+    if (selectedClip) {
+      onUpdateClip(selectedClip.id, { effects: { saturation: val } });
+    }
+  }
 
   return (
     <div className="h-full flex flex-col bg-secondary/20">
@@ -74,13 +97,19 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
                         <LabeledInput label="Name" placeholder="Item Name" value={itemName} onChange={handleNameChange} onBlur={handleNameBlur} />
                         <LabeledInput label="In/Out" placeholder="00:00:02:12 – 00:00:08:14" />
                         <LabeledInput label="Transform" placeholder="X:0 Y:0 Scale:100%" />
-                        <LabeledInput label="Opacity" placeholder="100%" />
+                        <div>
+                          <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Opacity</div>
+                          <Input type="number" min="0" max="100" className="bg-transparent border-input" placeholder="100" value={opacity} onChange={handleOpacityChange} disabled={!selectedClip} />
+                        </div>
                     </TabsContent>
                     <TabsContent value="effect" className="mt-0 space-y-4">
                         <LabeledInput label="LUT" placeholder="none" />
                         <LabeledInput label="Exposure" placeholder="0.0" />
                         <LabeledInput label="Contrast" placeholder="1.0" />
-                        <LabeledInput label="Saturation" placeholder="1.0" />
+                        <div>
+                          <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Saturation</div>
+                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={saturation} onChange={handleSaturationChange} disabled={!selectedClip} />
+                        </div>
                     </TabsContent>
                     <TabsContent value="audio" className="mt-0 space-y-4">
                         <LabeledInput label="Volume" placeholder="-3 dB" />
