@@ -28,6 +28,10 @@ interface CenterAreaProps {
   onClipSelected: (clip: Clip | null) => void;
   bladeMode: boolean;
   onSplitClip: (clip: Clip, time: number) => void;
+  onUpdateClip: (clipId: string, updatedProps: Partial<Clip>) => void;
+  assets: Asset[];
+  onToggleTrackMute: (trackId: string) => void;
+  onToggleTrackSolo: (trackId: string) => void;
 }
 
 export function CenterArea({ 
@@ -48,6 +52,10 @@ export function CenterArea({
   onClipSelected,
   bladeMode,
   onSplitClip,
+  onUpdateClip,
+  assets,
+  onToggleTrackMute,
+  onToggleTrackSolo,
 }: CenterAreaProps) {
   return (
     <div className="h-full flex flex-col bg-background">
@@ -80,9 +88,15 @@ export function CenterArea({
             onClipSelected={onClipSelected}
             bladeMode={bladeMode}
             onSplitClip={onSplitClip}
+            onUpdateClip={onUpdateClip}
+            assets={assets}
+            onToggleTrackMute={onToggleTrackMute}
+            onToggleTrackSolo={onToggleTrackSolo}
           />
         )}
       </div>
     </div>
   );
 }
+
+    

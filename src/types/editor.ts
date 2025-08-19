@@ -1,6 +1,4 @@
-
-
-export type NodeType = "import" | "scene" | "beat" | "transcript" | "caption" | "color" | "fx" | "export";
+export type NodeType = "import" | "scene" | "beat" | "transcript" | "caption" | "color" | "fx" | "export" | "waveform";
 
 export interface NodeItem {
   id: string;
@@ -32,6 +30,7 @@ export interface Asset {
   url: string;
   duration?: number;
   category: AssetCategory;
+  waveform?: number[];
 }
 
 export type TrackType = 'video' | 'audio' | 'caption';
@@ -43,6 +42,7 @@ export interface Clip {
   start: number;
   dur: number;
   inPoint: number;
+  outPoint: number;
   label: string;
   color: string;
   opacity: number;
@@ -64,6 +64,8 @@ export interface Track {
   id: string;
   name: string;
   type: TrackType;
+  isMuted?: boolean;
+  isSoloed?: boolean;
 }
 
 export interface Template {
@@ -77,5 +79,3 @@ export interface EditDecision {
   start: number;
   end: number;
 }
-
-    

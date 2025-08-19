@@ -18,6 +18,7 @@ import { autoSceneDetection } from "@/ai/flows/auto-scene-detection";
 import { generatePunchCutEdit } from "@/ai/flows/smart-templates";
 import { autoColor } from "@/ai/flows/auto-color";
 import { categorizeAsset } from "@/ai/flows/categorize-asset";
+import { generateWaveform } from "@/ai/flows/generate-waveform";
 import { useToast } from "@/hooks/use-toast";
 
 const templates: Template[] = [
@@ -127,11 +128,23 @@ export default function AIVideoEditorUI() {
 
   useEffect(() => {
     if (videoRef.current) {
+      const anySolo = tracks.some(t => t.isSoloed);
+      const clipTrack = tracks.find(t => t.id === selectedClip?.trackId);
+
+      let isMuted = false;
+      if(clipTrack) {
+        if(anySolo) {
+            isMuted = !clipTrack.isSoloed;
+        } else {
+            isMuted = !!clipTrack.isMuted;
+        }
+      }
+
       if (selectedClip) {
         videoRef.current.style.opacity = `${selectedClip.opacity / 100}`;
         videoRef.current.style.filter = `saturate(${selectedClip.effects.saturation}) contrast(${selectedClip.effects.contrast}) brightness(${selectedClip.effects.exposure})`;
         videoRef.current.style.transform = `translate(${selectedClip.transform.x}px, ${selectedClip.transform.y}px) scale(${selectedClip.transform.scale / 100})`;
-        videoRef.current.volume = selectedClip.volume / 100;
+        videoRef.current.volume = isMuted ? 0 : selectedClip.volume / 100;
       } else {
         videoRef.current.style.opacity = `1`;
         videoRef.current.style.filter = `saturate(1) contrast(1) brightness(1)`;
@@ -139,7 +152,7 @@ export default function AIVideoEditorUI() {
         videoRef.current.volume = 1;
       }
     }
-  }, [selectedClip]);
+  }, [selectedClip, tracks]);
 
   useEffect(() => {
     const body = document.querySelector('body');
@@ -161,7 +174,12 @@ export default function AIVideoEditorUI() {
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      setTimecode(formatTime(videoRef.current.currentTime));
+        const time = videoRef.current.currentTime;
+        setTimecode(formatTime(time));
+        
+        // This is a basic implementation. For multiple audio tracks, you'd need multiple audio elements.
+        const activeClip = clips.find(c => time >= c.start && time < c.start + c.dur);
+        setSelectedClip(activeClip || null);
     }
   };
 
@@ -185,13 +203,23 @@ export default function AIVideoEditorUI() {
         const videoEl = document.createElement('video');
         videoEl.src = fileDataUrl;
         videoEl.onloadedmetadata = async () => {
+          const newAsset: Asset = {
+            id: `asset-${Date.now()}`,
+            name: file.name,
+            type: file.type.startsWith('video') ? 'video' : 'audio',
+            url: fileDataUrl,
+            duration: videoEl.duration,
+            category: 'General',
+          };
+          setAssets((prevAssets) => [...prevAssets, newAsset]);
           
           let category: Asset['category'] = 'General';
           try {
             toast({ title: "🤖 Analyzing Asset", description: "AI is categorizing the new media..." });
             const result = await categorizeAsset({ mediaDataUri: fileDataUrl, fileName: file.name });
             category = result.category;
-             toast({ title: "✅ Asset Categorized", description: `Asset added to "${category}" bin.` });
+            handleUpdateAsset(newAsset.id, { category });
+            toast({ title: "✅ Asset Categorized", description: `Asset added to "${category}" bin.` });
           } catch(error) {
              console.error("Asset categorization failed:", error);
              toast({
@@ -201,16 +229,21 @@ export default function AIVideoEditorUI() {
              });
           }
 
-          const newAsset: Asset = {
-            id: `asset-${Date.now()}`,
-            name: file.name,
-            type: file.type.startsWith('video') ? 'video' : 'audio',
-            url: fileDataUrl,
-            duration: videoEl.duration,
-            category: category,
-          };
+          try {
+            toast({ title: "🤖 Generating Waveform", description: "AI is analyzing audio..." });
+            const result = await generateWaveform({ mediaDataUri: fileDataUrl });
+            handleUpdateAsset(newAsset.id, { waveform: result.waveform });
+             toast({ title: "✅ Waveform Generated", description: "Audio waveform is now available."});
+          } catch(error) {
+             console.error("Waveform generation failed:", error);
+             toast({
+                variant: "destructive",
+                title: "⚠️ Waveform Failed",
+                description: "Could not generate audio waveform.",
+             });
+          }
 
-          setAssets((prevAssets) => [...prevAssets, newAsset]);
+
           setSelectedAsset(newAsset);
           setTotalDuration(videoEl.duration);
           setSelectedClip(null);
@@ -227,6 +260,7 @@ export default function AIVideoEditorUI() {
             start: 0,
             dur: videoEl.duration,
             inPoint: 0,
+            outPoint: videoEl.duration,
             label: newAsset.name,
             color: "bg-primary/50",
             opacity: 100,
@@ -267,14 +301,15 @@ export default function AIVideoEditorUI() {
       const result = await autoCaption({ videoDataUri: selectedAsset.url });
       
       const captionTrack = tracks.find(t => t.type === 'caption');
-      if (captionTrack) {
+      if (captionTrack && selectedAsset.duration) {
         const newCaptionClip: Clip = {
           id: `clip-${Date.now()}`,
           assetId: selectedAsset.id,
           trackId: captionTrack.id,
           start: 0,
-          dur: selectedAsset.duration || totalDuration,
+          dur: selectedAsset.duration,
           inPoint: 0,
+          outPoint: selectedAsset.duration,
           label: result.captions.substring(0, 20) + '...',
           color: "bg-pink-500/50",
           opacity: 100,
@@ -340,6 +375,7 @@ export default function AIVideoEditorUI() {
             start: start,
             dur: dur,
             inPoint: start,
+            outPoint: end,
             label: `Scene ${i + 1}`,
             color: i % 2 === 0 ? "bg-primary/50" : "bg-accent/50",
             opacity: 100,
@@ -405,6 +441,7 @@ export default function AIVideoEditorUI() {
                   start: decision.start,
                   dur: dur,
                   inPoint: decision.start,
+                  outPoint: decision.end,
                   label: `${template.name} ${i + 1}`,
                   color: "bg-purple-500/50",
                   opacity: 100,
@@ -529,11 +566,15 @@ export default function AIVideoEditorUI() {
     }
 
     const timeIntoClip = splitTime - clip.start;
+    const originalAsset = assets.find(a => a.id === clip.assetId);
+    if (!originalAsset) return;
+
 
     const clip1: Clip = {
       ...clip,
       id: `clip-${Date.now()}-1`,
       dur: timeIntoClip,
+      outPoint: clip.inPoint + timeIntoClip,
       label: `${clip.label} (1)`,
     };
 
@@ -559,6 +600,14 @@ export default function AIVideoEditorUI() {
       title: '✂️ Clip Split',
       description: `Clip "${clip.label}" was split into two.`,
     });
+  };
+
+  const handleToggleTrackMute = (trackId: string) => {
+    setTracks(tracks.map(t => t.id === trackId ? { ...t, isMuted: !t.isMuted } : t));
+  };
+  
+  const handleToggleTrackSolo = (trackId: string) => {
+      setTracks(tracks.map(t => t.id === trackId ? { ...t, isSoloed: !t.isSoloed } : t));
   };
 
 
@@ -603,7 +652,10 @@ export default function AIVideoEditorUI() {
                 selectedAsset={selectedAsset}
                 onAssetClick={(asset) => {
                   setSelectedAsset(asset);
-                  if (videoRef.current) videoRef.current.src = asset.url;
+                  if (videoRef.current) {
+                      videoRef.current.src = asset.url;
+                      handleSeek(0);
+                  }
                   setSelectedClip(null);
                 }}
                 templates={templates}
@@ -629,11 +681,23 @@ export default function AIVideoEditorUI() {
                 selectedClip={selectedClip}
                 onClipSelected={(clip) => {
                   if (bladeMode) return;
-                  if (selectedAsset) videoRef.current!.src = selectedAsset.url;
+                  if(clip) {
+                    const asset = assets.find(a => a.id === clip?.assetId);
+                    if (asset && videoRef.current) {
+                        if(videoRef.current.src !== asset.url) videoRef.current.src = asset.url;
+                        const timeInClip = videoRef.current.currentTime - clip.start;
+                        const seekTo = clip.inPoint + timeInClip;
+                        videoRef.current.currentTime = seekTo;
+                    }
+                  }
                   setSelectedClip(clip)
                 }}
                 bladeMode={bladeMode}
                 onSplitClip={handleSplitClip}
+                onUpdateClip={handleUpdateClip}
+                assets={assets}
+                onToggleTrackMute={handleToggleTrackMute}
+                onToggleTrackSolo={handleToggleTrackSolo}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -673,3 +737,5 @@ export default function AIVideoEditorUI() {
     </TooltipProvider>
   );
 }
+
+    
