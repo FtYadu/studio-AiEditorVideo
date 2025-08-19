@@ -12,6 +12,7 @@ interface TimelineViewProps {
   selectedAsset: Asset | null;
   videoRef: React.RefObject<HTMLVideoElement>;
   onTimeUpdate: () => void;
+  onSeek: (time: number) => void;
   tracks: Track[];
   clips: Clip[];
   totalDuration: number;
@@ -21,12 +22,13 @@ export function TimelineView({
   selectedAsset, 
   videoRef, 
   onTimeUpdate, 
+  onSeek,
   tracks, 
   clips, 
   totalDuration 
 }: TimelineViewProps) {
   const [zoom, setZoom] = useState(80);
-  const timelineRulerRef = useRef<HTMLDivElement>(null);
+  const timelineContainerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export function TimelineView({
     if (!video) return;
 
     const updatePlayhead = () => {
-      if (video && playheadRef.current && timelineRulerRef.current) {
+      if (video && playheadRef.current && timelineContainerRef.current) {
         const percentage = (video.currentTime / totalDuration) * 100;
         playheadRef.current.style.left = `${percentage}%`;
       }
@@ -42,8 +44,21 @@ export function TimelineView({
     };
 
     video.addEventListener("timeupdate", updatePlayhead);
+    
+    // Set initial playhead position
+    updatePlayhead();
+
     return () => video.removeEventListener("timeupdate", updatePlayhead);
   }, [videoRef, totalDuration, onTimeUpdate]);
+
+  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!timelineContainerRef.current) return;
+    const rect = timelineContainerRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = (clickX / rect.width);
+    const newTime = percentage * totalDuration;
+    onSeek(newTime);
+  };
   
 
   const timelineWidth = `calc(${totalDuration * (zoom / 2)}px)`;
@@ -62,7 +77,6 @@ export function TimelineView({
                         <video 
                           ref={videoRef}
                           src={selectedAsset.url} 
-                          onTimeUpdate={onTimeUpdate}
                           onLoadedMetadata={onTimeUpdate}
                           className="w-full h-full object-contain" 
                         />
@@ -100,16 +114,19 @@ export function TimelineView({
                 </div>
               </div>
 
-              <div className="flex-1 overflow-auto relative" ref={timelineRulerRef}>
-                 <div ref={playheadRef} className="absolute top-0 z-20 w-0.5 h-full bg-red-500 pointer-events-none" />
-
-                <div className="h-8 sticky top-0 z-10 bg-secondary/80 backdrop-blur-sm text-[10px] text-muted-foreground flex items-end pl-16 border-b border-border" style={{ width: timelineWidth }}>
+              <div className="flex-1 overflow-auto relative">
+                <div 
+                  className="h-8 sticky top-0 z-10 bg-secondary/80 backdrop-blur-sm text-[10px] text-muted-foreground flex items-end pl-16 border-b border-border cursor-pointer" 
+                  style={{ width: timelineWidth }}
+                  onClick={handleTimelineClick}
+                >
                   {Array.from({ length: Math.ceil(totalDuration) + 1 }).map((_, i) => (
                     <div key={i} className="border-l border-border h-full flex items-end pb-1" style={{width: `${1 * (zoom/2)}px`}}>{i}s</div>
                   ))}
                 </div>
                 
-                <div className="relative" style={{ width: timelineWidth }}>
+                <div className="relative" style={{ width: timelineWidth }} ref={timelineContainerRef} onClick={handleTimelineClick}>
+                   <div ref={playheadRef} className="absolute top-0 z-20 w-0.5 h-full bg-red-500 pointer-events-none" />
                   {tracks.map((t) => (
                     <div key={t.id} className="h-12 flex border-b border-border/50">
                       <div className="w-16 shrink-0 grid place-items-center text-xs text-muted-foreground bg-secondary/50 border-r border-border font-headline sticky left-0">{t.name}</div>
@@ -136,3 +153,5 @@ export function TimelineView({
     </div>
   );
 }
+
+    

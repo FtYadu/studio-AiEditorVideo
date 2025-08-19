@@ -119,6 +119,13 @@ export default function AIVideoEditorUI() {
       setTimecode(formatTime(videoRef.current.currentTime));
     }
   };
+
+  const handleSeek = (time: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+      setTimecode(formatTime(time));
+    }
+  };
   
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -444,6 +451,7 @@ export default function AIVideoEditorUI() {
                 selectedAsset={selectedAsset}
                 videoRef={videoRef}
                 onTimeUpdate={handleTimeUpdate}
+                onSeek={handleSeek}
                 tracks={tracks}
                 clips={clips}
                 totalDuration={totalDuration}
@@ -485,3 +493,5 @@ export default function AIVideoEditorUI() {
     </TooltipProvider>
   );
 }
+
+    

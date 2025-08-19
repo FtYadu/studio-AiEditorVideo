@@ -16,6 +16,7 @@ interface CenterAreaProps {
   selectedAsset: Asset | null;
   videoRef: React.RefObject<HTMLVideoElement>;
   onTimeUpdate: () => void;
+  onSeek: (time: number) => void;
   tracks: Track[];
   clips: Clip[];
   totalDuration: number;
@@ -31,6 +32,7 @@ export function CenterArea({
   selectedAsset, 
   videoRef,
   onTimeUpdate,
+  onSeek,
   tracks,
   clips,
   totalDuration,
@@ -62,6 +64,7 @@ export function CenterArea({
             selectedAsset={selectedAsset} 
             videoRef={videoRef}
             onTimeUpdate={onTimeUpdate}
+            onSeek={onSeek}
             tracks={tracks}
             clips={clips}
             totalDuration={totalDuration}
@@ -71,3 +74,5 @@ export function CenterArea({
     </div>
   );
 }
+
+    
