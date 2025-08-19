@@ -4,7 +4,8 @@
 import React, { useMemo, useRef, useState } from 'react';
 import type { EdgeItem, NodeItem, NodeType } from '@/types/editor';
 import { Badge } from '@/components/ui/badge';
-import { Captions, Download, FolderOpen, Music2, Scissors, Settings, Wand2 } from 'lucide-react';
+import { Captions, Download, FolderOpen, Music2, Scissors, Settings, Wand2, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 function typeColor(t: NodeType): string {
   switch (t) {
@@ -35,14 +36,29 @@ function NodeIcon({ type }: { type: NodeType }) {
   return <Icon className="h-4 w-4" style={{ color: typeColor(type) }} />;
 }
 
+function StatusBadge({ status }: { status: NodeItem['status'] }) {
+    switch (status) {
+        case 'running':
+            return <Badge variant="outline" className="text-yellow-400 border-yellow-400/50"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Running</Badge>;
+        case 'completed':
+            return <Badge variant="outline" className="text-green-400 border-green-400/50"><CheckCircle2 className="h-3 w-3 mr-1" />OK</Badge>;
+        case 'error':
+            return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Error</Badge>;
+        default:
+            return <Badge variant="secondary">Idle</Badge>;
+    }
+}
+
+
 interface NodeCanvasProps {
   nodes: NodeItem[];
   setNodes: React.Dispatch<React.SetStateAction<NodeItem[]>>;
   edges: EdgeItem[];
   setEdges: React.Dispatch<React.SetStateAction<EdgeItem[]>>;
+  onNodeClick: (node: NodeItem) => void;
 }
 
-export function NodeCanvas({ nodes, setNodes, edges, setEdges }: NodeCanvasProps) {
+export function NodeCanvas({ nodes, setNodes, edges, setEdges, onNodeClick }: NodeCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -62,6 +78,12 @@ export function NodeCanvas({ nodes, setNodes, edges, setEdges }: NodeCanvasProps
     setNodes((prev) => prev.map((n) => (n.id === dragId ? { ...n, x: nx, y: ny } : n)));
   };
   const onMouseUp = () => setDragId(null);
+  
+  const handleNodeClick = (e: React.MouseEvent, node: NodeItem) => {
+    e.stopPropagation(); // prevent canvas click from firing
+    if(dragId) return; // don't fire click if we just finished dragging
+    onNodeClick(node);
+  }
 
   return (
     <div 
@@ -97,9 +119,10 @@ export function NodeCanvas({ nodes, setNodes, edges, setEdges }: NodeCanvasProps
       {nodes.map((n) => (
         <div
           key={n.id}
-          className="absolute w-[160px] h-[64px] rounded-xl border bg-background/80 backdrop-blur shadow-2xl cursor-grab active:cursor-grabbing flex items-center justify-between px-3"
+          className="absolute w-[160px] h-[64px] rounded-xl border bg-background/80 backdrop-blur shadow-2xl cursor-grab active:cursor-grabbing flex items-center justify-between px-3 transition-all"
           style={{ left: n.x, top: n.y, transform: `translate(-50%, -50%)`, borderColor: typeColor(n.type) }}
           onMouseDown={(e) => onMouseDown(e, n.id)}
+          onClick={(e) => handleNodeClick(e, n)}
         >
           <div className="flex items-center gap-2">
             <NodeIcon type={n.type} />
@@ -108,7 +131,7 @@ export function NodeCanvas({ nodes, setNodes, edges, setEdges }: NodeCanvasProps
               <div className="text-[10px] text-muted-foreground capitalize">{n.type}</div>
             </div>
           </div>
-          <Badge variant="outline" className="text-green-400 border-green-400/50">OK</Badge>
+          <StatusBadge status={n.status} />
           <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-background bg-card" style={{ borderColor: typeColor(n.type) }} />
           <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-background bg-card" style={{ borderColor: typeColor(n.type) }} />
         </div>

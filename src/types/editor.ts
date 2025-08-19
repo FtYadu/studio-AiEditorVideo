@@ -6,6 +6,7 @@ export interface NodeItem {
   type: NodeType;
   x: number;
   y: number;
+  status?: 'idle' | 'running' | 'completed' | 'error';
 }
 
 export interface EdgeItem {

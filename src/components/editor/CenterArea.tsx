@@ -33,6 +33,7 @@ interface CenterAreaProps {
   onToggleTrackMute: (trackId: string) => void;
   onToggleTrackSolo: (trackId: string) => void;
   activeCaption: string;
+  onNodeClick: (node: NodeItem) => void;
 }
 
 export function CenterArea({ 
@@ -58,6 +59,7 @@ export function CenterArea({
   onToggleTrackMute,
   onToggleTrackSolo,
   activeCaption,
+  onNodeClick,
 }: CenterAreaProps) {
   return (
     <div className="h-full flex flex-col bg-background">
@@ -76,7 +78,13 @@ export function CenterArea({
       </div>
       <div className="flex-1 min-h-0" onClick={() => onClipSelected(null)}>
         {mode === "workflow" ? (
-          <NodeCanvas nodes={nodes} setNodes={setNodes} edges={edges} setEdges={setEdges} /> 
+          <NodeCanvas 
+            nodes={nodes} 
+            setNodes={setNodes} 
+            edges={edges} 
+            setEdges={setEdges}
+            onNodeClick={onNodeClick}
+          /> 
         ) : (
           <TimelineView 
             selectedAsset={selectedAsset} 
@@ -101,5 +109,3 @@ export function CenterArea({
     </div>
   );
 }
-
-    

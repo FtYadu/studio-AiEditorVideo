@@ -45,7 +45,7 @@ const templates: Template[] = [
 ];
 
 const initialNodes: NodeItem[] = [
-  { id: "n8", label: "Export", type: "export", x: 1000, y: 140 },
+  { id: "n8", label: "Export", type: "export", x: 1000, y: 140, status: 'idle' },
 ]
 
 export default function AIVideoEditorUI() {
@@ -85,6 +85,10 @@ export default function AIVideoEditorUI() {
     const seconds = Math.floor((totalFrames % (60 * fps)) / fps).toString().padStart(2, '0');
     const frames = (totalFrames % fps).toString().padStart(2, '0');
     return `${hours}:${minutes}:${seconds}:${frames}`;
+  };
+
+  const updateNodeStatus = (nodeId: string, status: NodeItem['status']) => {
+    setNodes(prevNodes => prevNodes.map(n => n.id === nodeId ? { ...n, status } : n));
   };
 
   const handleDeleteClip = () => {
@@ -295,7 +299,7 @@ export default function AIVideoEditorUI() {
           setClips([newClip]);
           
           setNodes([
-            { id: "n1", label: "Import", type: "import", x: 60, y: 80 },
+            { id: "n1", label: "Import", type: "import", x: 60, y: 80, status: 'completed' },
             ...initialNodes
           ]);
           setEdges([]);
@@ -321,6 +325,19 @@ export default function AIVideoEditorUI() {
     }
     
     toast({ title: "🤖 Starting Auto-Caption", description: "The AI is analyzing the audio track..." });
+    const captionNodeId = 'n4';
+    const transcriptNodeId = 'n5';
+    
+    setNodes(n => [
+        ...n.filter(node => node.id !== captionNodeId && node.id !== transcriptNodeId), 
+        { id: captionNodeId, label: "Caption", type: "caption", x: 760, y: 60, status: 'running' },
+        { id: transcriptNodeId, label: "Transcript", type: "transcript", x: 520, y: 60, status: 'running' },
+    ]);
+    setEdges(e => [
+        ...e.filter(edge => edge.to !== captionNodeId && edge.to !== transcriptNodeId),
+        { from: "n1", to: transcriptNodeId }, { from: transcriptNodeId, to: captionNodeId }, { from: captionNodeId, to: "n8" }
+    ]);
+
     try {
       const result = await autoCaption({ videoDataUri: selectedAsset.url });
       
@@ -345,17 +362,8 @@ export default function AIVideoEditorUI() {
         setClips([...clips, newCaptionClip]);
       }
 
-      setNodes(n => n.some(node => node.id === 'n4') ? n : [
-        ...n, 
-        { id: "n4", label: "Transcript", type: "transcript", x: 520, y: 60 },
-        { id: "n5", label: "Caption", type: "caption", x: 760, y: 60 },
-      ]);
-      setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === 'n4') ? e : [
-        ...e,
-        { from: "n1", to: "n4" },
-        { from: "n4", to: "n5" },
-        { from: "n5", to: "n8" },
-      ]);
+      updateNodeStatus(captionNodeId, 'completed');
+      updateNodeStatus(transcriptNodeId, 'completed');
 
       toast({
         title: "✅ Captions Generated",
@@ -363,6 +371,8 @@ export default function AIVideoEditorUI() {
       });
     } catch (error) {
       console.error("Auto-caption failed:", error);
+      updateNodeStatus(captionNodeId, 'error');
+      updateNodeStatus(transcriptNodeId, 'error');
       toast({
         variant: "destructive",
         title: "🚫 Captioning Failed",
@@ -380,6 +390,15 @@ export default function AIVideoEditorUI() {
       });
       return;
     }
+    
+    const sceneNodeId = 'n2';
+    setNodes(n => n.some(node => node.id === sceneNodeId) ? 
+        n.map(node => node.id === sceneNodeId ? {...node, status: 'running'} : node) :
+        [...n, { id: sceneNodeId, label: "Scene Detect", type: "scene", x: 280, y: 60, status: 'running' }]
+    );
+    setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === sceneNodeId) ? e : [
+        ...e, { from: "n1", to: sceneNodeId }, { from: sceneNodeId, to: "n8" }
+    ]);
 
     toast({ title: "🤖 Detecting Scenes", description: "The AI is analyzing the video..." });
     try {
@@ -412,16 +431,7 @@ export default function AIVideoEditorUI() {
         setClips([...clips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
       }
       
-      setNodes(n => n.some(node => node.id === 'n2') ? n : [
-        ...n,
-        { id: "n2", label: "Scene Detect", type: "scene", x: 280, y: 60 },
-      ]);
-      setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === 'n2') ? e : [
-        ...e,
-        { from: "n1", to: "n2" },
-        { from: "n2", to: "n8" },
-      ]);
-
+      updateNodeStatus(sceneNodeId, 'completed');
 
       toast({
         title: "✅ Scene Detection Complete",
@@ -430,6 +440,7 @@ export default function AIVideoEditorUI() {
 
     } catch (error) {
       console.error("Auto-scene detection failed:", error);
+      updateNodeStatus(sceneNodeId, 'error');
       toast({
         variant: "destructive",
         title: "🚫 Scene Detection Failed",
@@ -447,6 +458,15 @@ export default function AIVideoEditorUI() {
       });
       return;
     }
+    
+    const templateNodeId = `n_template_${template.name.replace(/\s+/g, '')}`;
+    setNodes(n => n.some(node => node.id === templateNodeId) ?
+        n.map(node => node.id === templateNodeId ? {...node, status: 'running'} : node) :
+        [...n, { id: templateNodeId, label: template.name, type: "fx", x: 520, y: 220, status: 'running' }]
+    );
+    setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === templateNodeId) ? e : [
+        ...e, { from: "n1", to: templateNodeId }, { from: templateNodeId, to: "n8" }
+    ]);
 
     toast({ title: `🤖 Applying Template: ${template.name}`, description: "The AI is generating a new edit..." });
     try {
@@ -477,19 +497,9 @@ export default function AIVideoEditorUI() {
           });
           setClips([...clips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
       }
-
-
-       setNodes(n => n.some(node => node.id === 'n_template') ? n : [
-        ...n, 
-        { id: "n_template", label: template.name, type: "fx", x: 520, y: 220 },
-      ]);
-      setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === 'n_template') ? e : [
-        ...e,
-        { from: "n1", to: "n_template" },
-        { from: "n_template", to: "n8" },
-      ]);
-
-
+      
+      updateNodeStatus(templateNodeId, 'completed');
+      
       toast({
         title: "✅ Edit Generated",
         description: result.summary,
@@ -497,6 +507,7 @@ export default function AIVideoEditorUI() {
 
     } catch (error) {
       console.error("Smart template failed:", error);
+      updateNodeStatus(templateNodeId, 'error');
       toast({
         variant: "destructive",
         title: "🚫 Edit Generation Failed",
@@ -517,6 +528,15 @@ export default function AIVideoEditorUI() {
     const asset = assets.find(a => a.id === selectedClip.assetId);
     if (!asset) return;
 
+    const colorNodeId = 'n_color';
+    setNodes(n => n.some(node => node.id === colorNodeId) ?
+        n.map(node => node.id === colorNodeId ? {...node, status: 'running'} : node) :
+        [...n, { id: colorNodeId, label: 'Auto Color', type: 'color', x: 520, y: 140, status: 'running' }]
+    );
+     setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === colorNodeId) ? e : [
+        ...e, { from: 'n1', to: colorNodeId }, { from: colorNodeId, to: 'n8' }
+    ]);
+    
     toast({
       title: '🤖 Applying Auto-Color',
       description: 'The AI is analyzing the video for color correction...',
@@ -533,16 +553,8 @@ export default function AIVideoEditorUI() {
             lut: result.lut,
         }
       });
-
-      setNodes(n => n.some(node => node.id === 'n_color') ? n : [
-        ...n,
-        { id: 'n_color', label: 'Auto Color', type: 'color', x: 520, y: 140 },
-      ]);
-      setEdges(e => e.some(edge => edge.from === 'n1' && edge.to === 'n_color') ? e : [
-        ...e,
-        { from: 'n1', to: 'n_color' },
-        { from: 'n_color', to: 'n8' },
-      ]);
+      
+      updateNodeStatus(colorNodeId, 'completed');
       
       toast({
         title: '✅ Auto-Color Complete',
@@ -551,6 +563,7 @@ export default function AIVideoEditorUI() {
 
     } catch (error) {
       console.error('Auto-color failed:', error);
+      updateNodeStatus(colorNodeId, 'error');
       toast({
         variant: 'destructive',
         title: '🚫 Auto-Color Failed',
@@ -637,6 +650,28 @@ export default function AIVideoEditorUI() {
   
   const handleToggleTrackSolo = (trackId: string) => {
       setTracks(tracks.map(t => t.id === trackId ? { ...t, isSoloed: !t.isSoloed } : t));
+  };
+
+  const handleNodeClick = (node: NodeItem) => {
+    switch(node.type) {
+      case 'import':
+        handleImportClick();
+        break;
+      case 'scene':
+        handleAutoSceneDetection();
+        break;
+      case 'caption':
+        handleAutoCaption();
+        break;
+      case 'color':
+        handleAutoColor();
+        break;
+      case 'export':
+        setExportOpen(true);
+        break;
+      // You can add cases for other node types like 'fx' if they have actions
+      // For example, re-running a specific template
+    }
   };
 
 
@@ -728,6 +763,7 @@ export default function AIVideoEditorUI() {
                 onToggleTrackMute={handleToggleTrackMute}
                 onToggleTrackSolo={handleToggleTrackSolo}
                 activeCaption={activeCaption}
+                onNodeClick={handleNodeClick}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -767,5 +803,3 @@ export default function AIVideoEditorUI() {
     </TooltipProvider>
   );
 }
-
-    
