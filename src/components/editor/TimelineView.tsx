@@ -7,6 +7,7 @@ import { Scissors } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Asset, Clip, Track } from "@/types/editor";
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable";
+import { cn } from "@/lib/utils";
 
 interface TimelineViewProps {
   selectedAsset: Asset | null;
@@ -16,6 +17,8 @@ interface TimelineViewProps {
   tracks: Track[];
   clips: Clip[];
   totalDuration: number;
+  selectedClip: Clip | null;
+  onClipSelected: (clip: Clip) => void;
 }
 
 export function TimelineView({ 
@@ -25,7 +28,9 @@ export function TimelineView({
   onSeek,
   tracks, 
   clips, 
-  totalDuration 
+  totalDuration,
+  selectedClip,
+  onClipSelected
 }: TimelineViewProps) {
   const [zoom, setZoom] = useState(80);
   const timelineContainerRef = useRef<HTMLDivElement>(null);
@@ -132,7 +137,14 @@ export function TimelineView({
                       <div className="w-16 shrink-0 grid place-items-center text-xs text-muted-foreground bg-secondary/50 border-r border-border font-headline sticky left-0">{t.name}</div>
                       <div className="flex-1 relative">
                         {clips.filter((c) => c.trackId === t.id).map((c) => (
-                          <div key={c.id} className={`absolute h-8 rounded-md border border-black/20 ${c.color} flex items-center px-2 text-xs text-white backdrop-blur-sm shadow-md overflow-hidden`}
+                          <div 
+                              key={c.id} 
+                              onClick={() => onClipSelected(c)}
+                              className={cn(
+                                "absolute h-8 rounded-md border flex items-center px-2 text-xs text-white backdrop-blur-sm shadow-md overflow-hidden cursor-pointer",
+                                c.color,
+                                selectedClip?.id === c.id ? "border-yellow-400" : "border-black/20"
+                              )}
                               style={{ 
                                 left: `${(c.start / totalDuration) * 100}%`, 
                                 width: `${(c.dur / totalDuration) * 100}%`, 
@@ -153,5 +165,3 @@ export function TimelineView({
     </div>
   );
 }
-
-    

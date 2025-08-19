@@ -59,6 +59,7 @@ export default function AIVideoEditorUI() {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [clips, setClips] = useState<Clip[]>([]);
+  const [selectedClip, setSelectedClip] = useState<Clip | null>(null);
   const [totalDuration, setTotalDuration] = useState(20);
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   const [edges, setEdges] = useState<EdgeItem[]>([]);
@@ -459,6 +460,8 @@ export default function AIVideoEditorUI() {
                 setNodes={setNodes}
                 edges={edges}
                 setEdges={setEdges}
+                selectedClip={selectedClip}
+                onClipSelected={setSelectedClip}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -467,6 +470,7 @@ export default function AIVideoEditorUI() {
                 collapsed={collapsedRight} 
                 onToggle={() => setCollapsedRight(!collapsedRight)} 
                 selectedAsset={selectedAsset}
+                selectedClip={selectedClip}
                 onUpdateAsset={handleUpdateAsset}
               />
             </ResizablePanel>
@@ -493,5 +497,3 @@ export default function AIVideoEditorUI() {
     </TooltipProvider>
   );
 }
-
-    

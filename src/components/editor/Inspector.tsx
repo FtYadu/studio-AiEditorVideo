@@ -7,35 +7,40 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PanelLeft, PanelRight } from "lucide-react";
 import { LabeledInput, TooltipWrap } from "./ui-helpers";
-import type { Asset } from "@/types/editor";
+import type { Asset, Clip } from "@/types/editor";
 
 interface InspectorProps {
   collapsed: boolean;
   onToggle: () => void;
   selectedAsset: Asset | null;
+  selectedClip: Clip | null;
   onUpdateAsset: (assetId: string, updatedProps: Partial<Asset>) => void;
 }
 
-export function Inspector({ collapsed, onToggle, selectedAsset, onUpdateAsset }: InspectorProps) {
+export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, onUpdateAsset }: InspectorProps) {
   const [tab, setTab] = useState("general");
   const [assetName, setAssetName] = useState("");
 
+  const item = selectedClip || selectedAsset;
+  const itemType = selectedClip ? 'Clip' : 'Asset';
+
   useEffect(() => {
-    if (selectedAsset) {
-      setAssetName(selectedAsset.name);
+    if (item) {
+      setAssetName(item.name || (item as Clip).label);
     } else {
       setAssetName("");
     }
-  }, [selectedAsset]);
+  }, [item]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAssetName(e.target.value);
   };
   
   const handleNameBlur = () => {
-    if (selectedAsset && assetName !== selectedAsset.name) {
+    if (selectedAsset && !selectedClip && assetName !== selectedAsset.name) {
       onUpdateAsset(selectedAsset.id, { name: assetName });
     }
+    // TODO: Update clip label state
   };
 
 
@@ -49,7 +54,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset, onUpdateAsset }:
         </TooltipWrap>
         {!collapsed && <div className="text-xs text-muted-foreground font-headline">Inspector</div>}
       </div>
-      {collapsed || !selectedAsset ? null : (
+      {collapsed || !item ? null : (
         <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col min-h-0">
           <TabsList className="m-2 bg-background/50 border-border">
             <TabsTrigger value="general">General</TabsTrigger>
@@ -62,7 +67,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset, onUpdateAsset }:
             <ScrollArea className="h-full">
                 <div className="p-3 space-y-4">
                     <TabsContent value="general" className="mt-0 space-y-4">
-                        <LabeledInput label="Name" placeholder="Asset Name" value={assetName} onChange={handleNameChange} onBlur={handleNameBlur} />
+                        <LabeledInput label="Name" placeholder="Item Name" value={assetName} onChange={handleNameChange} onBlur={handleNameBlur} />
                         <LabeledInput label="In/Out" placeholder="00:00:02:12 – 00:00:08:14" />
                         <LabeledInput label="Transform" placeholder="X:0 Y:0 Scale:100%" />
                         <LabeledInput label="Opacity" placeholder="100%" />
@@ -85,11 +90,22 @@ export function Inspector({ collapsed, onToggle, selectedAsset, onUpdateAsset }:
                         <LabeledInput label="Brand Colors" placeholder="#6366F1 / #A855F7" />
                     </TabsContent>
                     <TabsContent value="meta" className="mt-0 space-y-4">
-                        <LabeledInput label="Camera" placeholder="FX30 4K24" />
-                        <LabeledInput label="Lens" placeholder="35mm" />
-                        <LabeledInput label="Creator" placeholder="Yadu" />
-                        <LabeledInput label="Asset ID" placeholder={selectedAsset.id} value={selectedAsset.id} readOnly />
-                        <LabeledInput label="Asset Type" placeholder={selectedAsset.type} value={selectedAsset.type} readOnly />
+                        <LabeledInput label="Type" placeholder={itemType} value={itemType} readOnly />
+                        {selectedAsset && !selectedClip && (
+                          <>
+                            <LabeledInput label="Camera" placeholder="FX30 4K24" />
+                            <LabeledInput label="Lens" placeholder="35mm" />
+                            <LabeledInput label="Creator" placeholder="Yadu" />
+                            <LabeledInput label="Asset ID" placeholder={selectedAsset.id} value={selectedAsset.id} readOnly />
+                            <LabeledInput label="Asset Type" placeholder={selectedAsset.type} value={selectedAsset.type} readOnly />
+                          </>
+                        )}
+                         {selectedClip && (
+                          <>
+                             <LabeledInput label="Clip ID" placeholder={selectedClip.id} value={selectedClip.id} readOnly />
+                             <LabeledInput label="Asset ID" placeholder={selectedClip.assetId} value={selectedClip.assetId} readOnly />
+                          </>
+                        )}
                     </TabsContent>
                 </div>
             </ScrollArea>

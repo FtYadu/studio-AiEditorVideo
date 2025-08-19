@@ -24,6 +24,8 @@ interface CenterAreaProps {
   setNodes: React.Dispatch<React.SetStateAction<NodeItem[]>>;
   edges: EdgeItem[];
   setEdges: React.Dispatch<React.SetStateAction<EdgeItem[]>>;
+  selectedClip: Clip | null;
+  onClipSelected: (clip: Clip) => void;
 }
 
 export function CenterArea({ 
@@ -39,7 +41,9 @@ export function CenterArea({
   nodes,
   setNodes,
   edges,
-  setEdges
+  setEdges,
+  selectedClip,
+  onClipSelected
 }: CenterAreaProps) {
   return (
     <div className="h-full flex flex-col bg-background">
@@ -68,11 +72,11 @@ export function CenterArea({
             tracks={tracks}
             clips={clips}
             totalDuration={totalDuration}
+            selectedClip={selectedClip}
+            onClipSelected={onClipSelected}
           />
         )}
       </div>
     </div>
   );
 }
-
-    
