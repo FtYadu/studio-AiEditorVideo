@@ -2,12 +2,13 @@
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
+import React from "react";
 
-export function LabeledInput({ label, placeholder }: { label: string; placeholder?: string }) {
+export function LabeledInput({ label, ...props }: { label: string } & React.ComponentProps<typeof Input>) {
   return (
     <div>
       <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">{label}</div>
-      <Input placeholder={placeholder} className="bg-transparent border-input" />
+      <Input className="bg-transparent border-input" {...props} />
     </div>
   );
 }

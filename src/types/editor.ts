@@ -19,3 +19,10 @@ export interface CommandAction {
   icon?: React.ReactNode;
   run: () => void;
 }
+
+export interface Asset {
+  id: string;
+  name: string;
+  type: 'video' | 'audio';
+  url: string;
+}

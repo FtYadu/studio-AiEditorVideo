@@ -7,12 +7,21 @@ import { Separator } from "@/components/ui/separator";
 import { Film, Layers, PanelLeft, PanelRight, Search, Upload, Wand2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { TooltipWrap } from "./ui-helpers";
+import type { Asset } from "@/types/editor";
+import { cn } from "@/lib/utils";
 
-function AssetsPane() {
+interface AssetsPaneProps {
+  onImport: () => void;
+  assets: Asset[];
+  selectedAsset: Asset | null;
+  onAssetClick: (asset: Asset) => void;
+}
+
+function AssetsPane({ onImport, assets, selectedAsset, onAssetClick }: AssetsPaneProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="p-3 border-b border-border flex items-center gap-2">
-        <Button variant="secondary" className="h-8"><Upload className="h-4 w-4 mr-2"/>Import</Button>
+        <Button variant="secondary" className="h-8" onClick={onImport}><Upload className="h-4 w-4 mr-2"/>Import</Button>
         <div className="relative flex-1">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"/>
           <Input placeholder="Search assets…" className="pl-8 h-8 bg-transparent border-input"/>
@@ -20,7 +29,23 @@ function AssetsPane() {
       </div>
       <ScrollArea className="flex-1">
         <div className="p-3 grid grid-cols-2 xl:grid-cols-3 gap-3">
-          {Array.from({ length: 12 }).map((_, i) => (
+          {assets.map((asset) => (
+            <div 
+              key={asset.id} 
+              className={cn(
+                "aspect-video rounded-md bg-secondary border border-border overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-primary/50",
+                selectedAsset?.id === asset.id && "ring-primary"
+              )}
+              onClick={() => onAssetClick(asset)}
+            >
+               {asset.type === 'video' ? (
+                  <video src={asset.url} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full object-cover bg-secondary grid place-content-center text-muted-foreground text-xs">{asset.name}</div>
+                )}
+            </div>
+          ))}
+          {assets.length === 0 && Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="aspect-video rounded-md bg-secondary border border-border overflow-hidden">
                <img src="https://placehold.co/300x200" alt={`Clip ${i+1}`} className="w-full h-full object-cover" data-ai-hint="video footage" />
             </div>
@@ -72,11 +97,12 @@ function TemplatesPane() {
 
 interface AgentsPaneProps {
   onAutoCaption: () => void;
+  onAutoCut: () => void;
 }
 
-function AgentsPane({ onAutoCaption }: AgentsPaneProps) {
+function AgentsPane({ onAutoCaption, onAutoCut }: AgentsPaneProps) {
   const agents = [
-    { name: "Auto‑Cut", desc: "Detect scenes and punch‑cut", action: () => alert("Auto-Cut not implemented") },
+    { name: "Auto‑Cut", desc: "Detect scenes and punch‑cut", action: onAutoCut },
     { name: "Auto‑Caption", desc: "ASR + styling presets", action: onAutoCaption },
     { name: "Auto‑Color", desc: "LUT + exposure + curves", action: () => alert("Auto-Color not implemented") },
   ];
@@ -102,9 +128,14 @@ interface LeftRailProps {
   collapsed: boolean;
   onToggle: () => void;
   onAutoCaption: () => void;
+  onAutoCut: () => void;
+  onImport: () => void;
+  assets: Asset[];
+  selectedAsset: Asset | null;
+  onAssetClick: (asset: Asset) => void;
 }
 
-export function LeftRail({ collapsed, onToggle, onAutoCaption }: LeftRailProps) {
+export function LeftRail({ collapsed, onToggle, onAutoCaption, onAutoCut, onImport, assets, selectedAsset, onAssetClick }: LeftRailProps) {
   const [tab, setTab] = useState<"assets" | "templates" | "agents">("assets");
 
   return (
@@ -136,9 +167,9 @@ export function LeftRail({ collapsed, onToggle, onAutoCaption }: LeftRailProps) 
         <div className="flex-1 min-w-0">
           {!collapsed && (
             <div className="h-full">
-              {tab === "assets" && <AssetsPane />}
+              {tab === "assets" && <AssetsPane onImport={onImport} assets={assets} selectedAsset={selectedAsset} onAssetClick={onAssetClick} />}
               {tab === "templates" && <TemplatesPane />}
-              {tab === "agents" && <AgentsPane onAutoCaption={onAutoCaption} />}
+              {tab === "agents" && <AgentsPane onAutoCaption={onAutoCaption} onAutoCut={onAutoCut} />}
             </div>
           )}
         </div>

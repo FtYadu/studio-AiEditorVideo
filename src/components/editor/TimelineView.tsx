@@ -4,8 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Scissors } from "lucide-react";
 import { useState } from "react";
+import type { Asset } from "@/types/editor";
 
-export function TimelineView() {
+// Dummy Resizable components to avoid errors if not present
+const ResizablePanelGroup = ({ direction, children }: { direction: "vertical" | "horizontal", children: React.ReactNode }) => <div className={`flex ${direction === 'vertical' ? 'flex-col' : ''} h-full w-full`}>{children}</div>;
+const ResizablePanel = ({ defaultSize, minSize, children }: { defaultSize: number, minSize?: number, children: React.ReactNode }) => <div style={{ flexGrow: defaultSize, flexShrink: 0, flexBasis: 0 }}>{children}</div>;
+const ResizableHandle = ({ withHandle }: { withHandle?: boolean }) => <div className="w-1 h-full bg-border cursor-col-resize hover:bg-primary" />;
+
+
+interface TimelineViewProps {
+  selectedAsset: Asset | null;
+}
+
+export function TimelineView({ selectedAsset }: TimelineViewProps) {
   const [zoom, setZoom] = useState(80);
   const tracks = [
     { name: "V1", type: "video" },
@@ -33,9 +44,13 @@ export function TimelineView() {
                 <ResizablePanel defaultSize={75}>
                   <div className="h-full flex items-center justify-center p-4">
                     <div className="aspect-video w-full max-w-full h-auto max-h-full rounded-lg border-2 border-primary bg-black relative overflow-hidden">
-                      <img src="https://placehold.co/1280x720" alt="Video Preview" className="w-full h-full object-contain" data-ai-hint="video preview screen" />
-                      <div className="absolute inset-0 border-8 border-black/30"></div>
-                      <div className="absolute inset-8 border border-white/10 rounded"></div>
+                      {selectedAsset && selectedAsset.type === 'video' ? (
+                        <video src={selectedAsset.url} controls className="w-full h-full object-contain" />
+                      ) : (
+                        <img src="https://placehold.co/1280x720" alt="Video Preview" className="w-full h-full object-contain" data-ai-hint="video preview screen" />
+                      )}
+                      <div className="absolute inset-0 border-8 border-black/30 pointer-events-none"></div>
+                      <div className="absolute inset-8 border border-white/10 rounded pointer-events-none"></div>
                       <div className="absolute bottom-4 left-4 text-xs bg-black/50 px-2 py-1 rounded">Preview (Draft)</div>
                     </div>
                   </div>
@@ -93,9 +108,3 @@ export function TimelineView() {
     </div>
   );
 }
-
-// Dummy Resizable components to avoid errors if not present
-const ResizablePanelGroup = ({ direction, children }: { direction: "vertical" | "horizontal", children: React.ReactNode }) => <div className={`flex ${direction === 'vertical' ? 'flex-col' : ''} h-full w-full`}>{children}</div>;
-const ResizablePanel = ({ defaultSize, minSize, children }: { defaultSize: number, minSize?: number, children: React.ReactNode }) => <div style={{ flexGrow: defaultSize, flexShrink: 0, flexBasis: 0 }}>{children}</div>;
-const ResizableHandle = ({ withHandle }: { withHandle?: boolean }) => <div className="w-1 h-full bg-border cursor-col-resize hover:bg-primary" />;
-

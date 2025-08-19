@@ -6,13 +6,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Cpu, Layers, Workflow } from "lucide-react";
 import { NodeCanvas } from "./NodeCanvas";
 import { TimelineView } from "./TimelineView";
+import type { Asset } from "@/types/editor";
 
 interface CenterAreaProps {
   mode: "workflow" | "edit";
   setMode: (m: "workflow" | "edit") => void;
+  selectedAsset: Asset | null;
 }
 
-export function CenterArea({ mode, setMode }: CenterAreaProps) {
+export function CenterArea({ mode, setMode, selectedAsset }: CenterAreaProps) {
   return (
     <div className="h-full flex flex-col bg-background">
       <div className="h-12 border-b border-border flex items-center px-3 gap-3 bg-secondary/20">
@@ -29,7 +31,7 @@ export function CenterArea({ mode, setMode }: CenterAreaProps) {
         </div>
       </div>
       <div className="flex-1 min-h-0">
-        {mode === "workflow" ? <NodeCanvas /> : <TimelineView />}
+        {mode === "workflow" ? <NodeCanvas /> : <TimelineView selectedAsset={selectedAsset} />}
       </div>
     </div>
   );

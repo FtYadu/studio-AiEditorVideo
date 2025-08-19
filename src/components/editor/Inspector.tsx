@@ -1,14 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PanelLeft, PanelRight } from "lucide-react";
 import { LabeledInput, TooltipWrap } from "./ui-helpers";
+import type { Asset } from "@/types/editor";
 
-export function Inspector({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+interface InspectorProps {
+  collapsed: boolean;
+  onToggle: () => void;
+  selectedAsset: Asset | null;
+}
+
+export function Inspector({ collapsed, onToggle, selectedAsset }: InspectorProps) {
   const [tab, setTab] = useState("general");
+  const [clipName, setClipName] = useState("Clip 001");
+
+  useEffect(() => {
+    if (selectedAsset) {
+      setClipName(selectedAsset.name);
+    }
+  }, [selectedAsset]);
+
   return (
     <div className="h-full flex flex-col bg-secondary/20">
       <div className="h-10 border-b border-border flex items-center px-2 gap-2">
@@ -19,7 +34,7 @@ export function Inspector({ collapsed, onToggle }: { collapsed: boolean; onToggl
         </TooltipWrap>
         {!collapsed && <div className="text-xs text-muted-foreground font-headline">Inspector</div>}
       </div>
-      {collapsed ? null : (
+      {collapsed || !selectedAsset ? null : (
         <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col min-h-0">
           <TabsList className="m-2 bg-background/50 border-border">
             <TabsTrigger value="general">General</TabsTrigger>
@@ -32,7 +47,7 @@ export function Inspector({ collapsed, onToggle }: { collapsed: boolean; onToggl
             <ScrollArea className="h-full">
                 <div className="p-3 space-y-4">
                     <TabsContent value="general" className="mt-0 space-y-4">
-                        <LabeledInput label="Name" placeholder="Clip 001" />
+                        <LabeledInput label="Name" placeholder="Clip 001" value={clipName} onChange={(e) => setClipName(e.target.value)} />
                         <LabeledInput label="In/Out" placeholder="00:00:02:12 – 00:00:08:14" />
                         <LabeledInput label="Transform" placeholder="X:0 Y:0 Scale:100%" />
                         <LabeledInput label="Opacity" placeholder="100%" />
@@ -58,6 +73,8 @@ export function Inspector({ collapsed, onToggle }: { collapsed: boolean; onToggl
                         <LabeledInput label="Camera" placeholder="FX30 4K24" />
                         <LabeledInput label="Lens" placeholder="35mm" />
                         <LabeledInput label="Creator" placeholder="Yadu" />
+                        <LabeledInput label="Asset ID" placeholder={selectedAsset.id} readOnly />
+                        <LabeledInput label="Asset Type" placeholder={selectedAsset.type} readOnly />
                     </TabsContent>
                 </div>
             </ScrollArea>
