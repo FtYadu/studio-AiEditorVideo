@@ -70,21 +70,27 @@ function TemplatesPane() {
   );
 }
 
-function AgentsPane() {
+interface AgentsPaneProps {
+  onAutoCaption: () => void;
+}
+
+function AgentsPane({ onAutoCaption }: AgentsPaneProps) {
+  const agents = [
+    { name: "Auto‑Cut", desc: "Detect scenes and punch‑cut", action: () => alert("Auto-Cut not implemented") },
+    { name: "Auto‑Caption", desc: "ASR + styling presets", action: onAutoCaption },
+    { name: "Auto‑Color", desc: "LUT + exposure + curves", action: () => alert("Auto-Color not implemented") },
+  ];
+
   return (
     <ScrollArea className="h-full">
       <div className="p-3 space-y-3">
-        {[
-          { name: "Auto‑Cut", desc: "Detect scenes and punch‑cut" },
-          { name: "Auto‑Caption", desc: "ASR + styling presets" },
-          { name: "Auto‑Color", desc: "LUT + exposure + curves" },
-        ].map((a) => (
+        {agents.map((a) => (
           <div key={a.name} className="p-3 rounded-lg bg-secondary border border-border flex items-center justify-between">
             <div>
               <div className="text-sm font-medium font-headline">{a.name}</div>
               <div className="text-xs text-muted-foreground">{a.desc}</div>
             </div>
-            <Button size="sm" variant="secondary">Run</Button>
+            <Button size="sm" variant="secondary" onClick={a.action}>Run</Button>
           </div>
         ))}
       </div>
@@ -92,7 +98,13 @@ function AgentsPane() {
   );
 }
 
-export function LeftRail({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+interface LeftRailProps {
+  collapsed: boolean;
+  onToggle: () => void;
+  onAutoCaption: () => void;
+}
+
+export function LeftRail({ collapsed, onToggle, onAutoCaption }: LeftRailProps) {
   const [tab, setTab] = useState<"assets" | "templates" | "agents">("assets");
 
   return (
@@ -126,7 +138,7 @@ export function LeftRail({ collapsed, onToggle }: { collapsed: boolean; onToggle
             <div className="h-full">
               {tab === "assets" && <AssetsPane />}
               {tab === "templates" && <TemplatesPane />}
-              {tab === "agents" && <AgentsPane />}
+              {tab === "agents" && <AgentsPane onAutoCaption={onAutoCaption} />}
             </div>
           )}
         </div>

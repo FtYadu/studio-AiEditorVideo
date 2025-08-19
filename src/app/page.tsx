@@ -12,6 +12,8 @@ import { CommandMenu } from "@/components/editor/CommandMenu";
 import { ExportDialog } from "@/components/editor/ExportDialog";
 import { Captions, Download, FolderOpen, Layers, MonitorDown, Wand2, Workflow } from "lucide-react";
 import type { CommandAction } from "@/types/editor";
+import { autoCaption } from "@/ai/flows/auto-captioning";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AIVideoEditorUI() {
   const [mode, setMode] = useState<"workflow" | "edit">("workflow");
@@ -24,6 +26,7 @@ export default function AIVideoEditorUI() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [projectName, setProjectName] = useState("AIVidFlow Project");
+  const { toast } = useToast();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -51,9 +54,33 @@ export default function AIVideoEditorUI() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  const handleAutoCaption = async () => {
+    // TODO: Replace with actual audio data from the selected video clip.
+    // This is a placeholder data URI for a silent audio clip.
+    const audioDataUri = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+    
+    toast({ title: "🤖 Starting Auto-Caption", description: "The AI is analyzing the audio track..." });
+    try {
+      const result = await autoCaption({ audioDataUri });
+      console.log("Auto-caption result:", result);
+      toast({
+        title: "✅ Captions Generated",
+        description: "The caption track has been added to your timeline.",
+      });
+      // TODO: Add the generated captions to the timeline state.
+    } catch (error) {
+      console.error("Auto-caption failed:", error);
+      toast({
+        variant: "destructive",
+        title: "🚫 Captioning Failed",
+        description: "Could not generate captions. Please try again.",
+      });
+    }
+  };
+
   const actions: CommandAction[] = [
     { id: "import", label: "Import Media…", icon: <FolderOpen className="mr-2 h-4 w-4" />, run: () => alert("Import clicked") },
-    { id: "captrack", label: "Create Caption Track", icon: <Captions className="mr-2 h-4 w-4" />, run: () => alert("Caption track") },
+    { id: "captrack", label: "Create Caption Track", icon: <Captions className="mr-2 h-4 w-4" />, run: handleAutoCaption },
     { id: "recipe60", label: "Run Recipe: TikTok 60s Punch‑Cut", icon: <Wand2 className="mr-2 h-4 w-4" />, run: () => alert("Recipe") },
     { id: "draft", label: "Toggle Draft/Full Preview", icon: <MonitorDown className="mr-2 h-4 w-4" />, run: () => setDraftQuality((d) => !d) },
     { id: "export", label: "Open Export", icon: <Download className="mr-2 h-4 w-4" />, run: () => setExportOpen(true) },
@@ -77,7 +104,11 @@ export default function AIVideoEditorUI() {
         <main className="flex-1 overflow-hidden">
           <ResizablePanelGroup direction="horizontal" className="h-full">
             <ResizablePanel defaultSize={collapsedLeft ? 4 : 18} minSize={4} maxSize={26}>
-              <LeftRail collapsed={collapsedLeft} onToggle={() => setCollapsedLeft(!collapsedLeft)} />
+              <LeftRail 
+                collapsed={collapsedLeft} 
+                onToggle={() => setCollapsedLeft(!collapsedLeft)}
+                onAutoCaption={handleAutoCaption}
+              />
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={64} minSize={40}>
