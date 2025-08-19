@@ -750,5 +750,3 @@ export default function AIVideoEditorUI() {
     </TooltipProvider>
   );
 }
-
-    

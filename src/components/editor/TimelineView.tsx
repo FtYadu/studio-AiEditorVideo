@@ -399,5 +399,3 @@ export function TimelineView({
     </div>
   );
 }
-
-    
