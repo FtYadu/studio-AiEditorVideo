@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Cpu, Layers, Workflow } from "lucide-react";
 import { NodeCanvas } from "./NodeCanvas";
 import { TimelineView } from "./TimelineView";
-import type { Asset, Clip, Track } from "@/types/editor";
+import type { Asset, Clip, Track, NodeItem, EdgeItem } from "@/types/editor";
 import React from "react";
 
 interface CenterAreaProps {
@@ -19,6 +19,9 @@ interface CenterAreaProps {
   tracks: Track[];
   clips: Clip[];
   totalDuration: number;
+  nodes: NodeItem[];
+  setNodes: React.Dispatch<React.SetStateAction<NodeItem[]>>;
+  edges: EdgeItem[];
 }
 
 export function CenterArea({ 
@@ -29,7 +32,10 @@ export function CenterArea({
   onTimeUpdate,
   tracks,
   clips,
-  totalDuration
+  totalDuration,
+  nodes,
+  setNodes,
+  edges
 }: CenterAreaProps) {
   return (
     <div className="h-full flex flex-col bg-background">
@@ -48,7 +54,7 @@ export function CenterArea({
       </div>
       <div className="flex-1 min-h-0">
         {mode === "workflow" ? (
-          <NodeCanvas /> 
+          <NodeCanvas nodes={nodes} setNodes={setNodes} edges={edges} /> 
         ) : (
           <TimelineView 
             selectedAsset={selectedAsset} 

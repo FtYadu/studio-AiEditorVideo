@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useRef, useState } from 'react';
@@ -33,30 +34,13 @@ function NodeIcon({ type }: { type: NodeType }) {
   return <Icon className="h-4 w-4" style={{ color: typeColor(type) }} />;
 }
 
-export function NodeCanvas() {
-  const [nodes, setNodes] = useState<NodeItem[]>([
-    { id: "n1", label: "Import", type: "import", x: 60, y: 80 },
-    { id: "n2", label: "Scene Detect", type: "scene", x: 280, y: 60 },
-    { id: "n3", label: "Beat Map", type: "beat", x: 280, y: 200 },
-    { id: "n4", label: "Transcript", type: "transcript", x: 520, y: 60 },
-    { id: "n5", label: "Caption", type: "caption", x: 760, y: 60 },
-    { id: "n6", label: "Color", type: "color", x: 520, y: 220 },
-    { id: "n7", label: "FX", type: "fx", x: 760, y: 220 },
-    { id: "n8", label: "Export", type: "export", x: 1000, y: 140 },
-  ]);
-  const edges: EdgeItem[] = useMemo(() => (
-    [
-      { from: "n1", to: "n2" },
-      { from: "n1", to: "n3" },
-      { from: "n2", to: "n4" },
-      { from: "n4", to: "n5" },
-      { from: "n3", to: "n6" },
-      { from: "n6", to: "n7" },
-      { from: "n5", to: "n8" },
-      { from: "n7", to: "n8" },
-    ]
-  ), []);
+interface NodeCanvasProps {
+  nodes: NodeItem[];
+  setNodes: React.Dispatch<React.SetStateAction<NodeItem[]>>;
+  edges: EdgeItem[];
+}
 
+export function NodeCanvas({ nodes, setNodes, edges }: NodeCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });

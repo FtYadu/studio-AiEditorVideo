@@ -12,7 +12,7 @@ import { Transport } from "@/components/editor/Transport";
 import { CommandMenu } from "@/components/editor/CommandMenu";
 import { ExportDialog } from "@/components/editor/ExportDialog";
 import { Captions, Download, FolderOpen, Layers, MonitorDown, Wand2, Workflow } from "lucide-react";
-import type { CommandAction, Asset, Track, Clip, Template } from "@/types/editor";
+import type { CommandAction, Asset, Track, Clip, Template, NodeItem, EdgeItem } from "@/types/editor";
 import { autoCaption } from "@/ai/flows/auto-captioning";
 import { autoSceneDetection } from "@/ai/flows/auto-scene-detection";
 import { generatePunchCutEdit } from "@/ai/flows/smart-templates";
@@ -39,6 +39,10 @@ const templates: Template[] = [
     },
 ];
 
+const initialNodes: NodeItem[] = [
+  { id: "n8", label: "Export", type: "export", x: 1000, y: 140 },
+]
+
 export default function AIVideoEditorUI() {
   const [mode, setMode] = useState<"workflow" | "edit">("workflow");
   const [collapsedLeft, setCollapsedLeft] = useState(false);
@@ -55,6 +59,8 @@ export default function AIVideoEditorUI() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [clips, setClips] = useState<Clip[]>([]);
   const [totalDuration, setTotalDuration] = useState(20);
+  const [nodes, setNodes] = useState<NodeItem[]>(initialNodes);
+  const [edges, setEdges] = useState<EdgeItem[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -154,6 +160,12 @@ export default function AIVideoEditorUI() {
           };
           setClips([newClip]);
           
+          setNodes([
+            { id: "n1", label: "Import", type: "import", x: 60, y: 80 },
+            ...initialNodes
+          ]);
+          setEdges([]);
+
           toast({
             title: "✅ Asset Imported",
             description: `${file.name} has been added to your project.`,
@@ -192,6 +204,18 @@ export default function AIVideoEditorUI() {
         }
         setClips(c => [...c, newCaptionClip]);
       }
+
+      setNodes(n => n.some(node => node.id === 'n4') ? n : [
+        ...n, 
+        { id: "n4", label: "Transcript", type: "transcript", x: 520, y: 60 },
+        { id: "n5", label: "Caption", type: "caption", x: 760, y: 60 },
+      ]);
+      setEdges(e => e.some(edge => edge.from === 'n4') ? e : [
+        ...e,
+        { from: "n1", to: "n4" },
+        { from: "n4", to: "n5" },
+        { from: "n5", to: "n8" },
+      ]);
 
       toast({
         title: "✅ Captions Generated",
@@ -242,6 +266,16 @@ export default function AIVideoEditorUI() {
         }
         setClips(currentClips => [...currentClips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
       }
+      
+      setNodes(n => n.some(node => node.id === 'n2') ? n : [
+        ...n,
+        { id: "n2", label: "Scene Detect", type: "scene", x: 280, y: 60 },
+      ]);
+      setEdges(e => e.some(edge => edge.to === 'n2') ? e : [
+        ...e,
+        { from: "n1", to: "n2" },
+      ]);
+
 
       toast({
         title: "✅ Scene Detection Complete",
@@ -345,6 +379,9 @@ export default function AIVideoEditorUI() {
                 tracks={tracks}
                 clips={clips}
                 totalDuration={totalDuration}
+                nodes={nodes}
+                setNodes={setNodes}
+                edges={edges}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
