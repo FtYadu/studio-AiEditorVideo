@@ -12,13 +12,12 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import wav from 'wav';
 
 const AutoCaptionInputSchema = z.object({
-  audioDataUri: z
+  videoDataUri: z
     .string()
     .describe(
-      "The audio from the video, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "The video to be captioned, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
 export type AutoCaptionInput = z.infer<typeof AutoCaptionInputSchema>;
@@ -36,10 +35,10 @@ const prompt = ai.definePrompt({
   name: 'autoCaptionPrompt',
   input: {schema: AutoCaptionInputSchema},
   output: {schema: AutoCaptionOutputSchema},
-  prompt: `You are an AI that generates video captions from audio.
+  prompt: `You are an AI that generates video captions from a video file.
 
-  Given the following audio, generate captions for the video. Return the captions as a single string.
-  Audio: {{media url=audioDataUri}}`,
+  Given the following video, generate captions for the video. Return the captions as a single string.
+  Video: {{media url=videoDataUri}}`,
 });
 
 const autoCaptionFlow = ai.defineFlow(

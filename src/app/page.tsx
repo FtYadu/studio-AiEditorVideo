@@ -151,14 +151,10 @@ export default function AIVideoEditorUI() {
       });
       return;
     }
-    // This is a placeholder for extracting audio.
-    // A real implementation would use a library like ffmpeg.wasm to extract audio.
-    const audioDataUri = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
     
     toast({ title: "🤖 Starting Auto-Caption", description: "The AI is analyzing the audio track..." });
     try {
-      const result = await autoCaption({ audioDataUri });
-      console.log("Auto-caption result:", result);
+      const result = await autoCaption({ videoDataUri: selectedAsset.url });
       
       const captionTrack = tracks.find(t => t.type === 'caption');
       if (captionTrack) {
