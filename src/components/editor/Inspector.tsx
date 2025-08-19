@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,17 +13,31 @@ interface InspectorProps {
   collapsed: boolean;
   onToggle: () => void;
   selectedAsset: Asset | null;
+  onUpdateAsset: (assetId: string, updatedProps: Partial<Asset>) => void;
 }
 
-export function Inspector({ collapsed, onToggle, selectedAsset }: InspectorProps) {
+export function Inspector({ collapsed, onToggle, selectedAsset, onUpdateAsset }: InspectorProps) {
   const [tab, setTab] = useState("general");
-  const [clipName, setClipName] = useState("Clip 001");
+  const [assetName, setAssetName] = useState("");
 
   useEffect(() => {
     if (selectedAsset) {
-      setClipName(selectedAsset.name);
+      setAssetName(selectedAsset.name);
+    } else {
+      setAssetName("");
     }
   }, [selectedAsset]);
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAssetName(e.target.value);
+  };
+  
+  const handleNameBlur = () => {
+    if (selectedAsset && assetName !== selectedAsset.name) {
+      onUpdateAsset(selectedAsset.id, { name: assetName });
+    }
+  };
+
 
   return (
     <div className="h-full flex flex-col bg-secondary/20">
@@ -47,7 +62,7 @@ export function Inspector({ collapsed, onToggle, selectedAsset }: InspectorProps
             <ScrollArea className="h-full">
                 <div className="p-3 space-y-4">
                     <TabsContent value="general" className="mt-0 space-y-4">
-                        <LabeledInput label="Name" placeholder="Clip 001" value={clipName} onChange={(e) => setClipName(e.target.value)} />
+                        <LabeledInput label="Name" placeholder="Asset Name" value={assetName} onChange={handleNameChange} onBlur={handleNameBlur} />
                         <LabeledInput label="In/Out" placeholder="00:00:02:12 – 00:00:08:14" />
                         <LabeledInput label="Transform" placeholder="X:0 Y:0 Scale:100%" />
                         <LabeledInput label="Opacity" placeholder="100%" />
@@ -73,8 +88,8 @@ export function Inspector({ collapsed, onToggle, selectedAsset }: InspectorProps
                         <LabeledInput label="Camera" placeholder="FX30 4K24" />
                         <LabeledInput label="Lens" placeholder="35mm" />
                         <LabeledInput label="Creator" placeholder="Yadu" />
-                        <LabeledInput label="Asset ID" placeholder={selectedAsset.id} readOnly />
-                        <LabeledInput label="Asset Type" placeholder={selectedAsset.type} readOnly />
+                        <LabeledInput label="Asset ID" placeholder={selectedAsset.id} value={selectedAsset.id} readOnly />
+                        <LabeledInput label="Asset Type" placeholder={selectedAsset.type} value={selectedAsset.type} readOnly />
                     </TabsContent>
                 </div>
             </ScrollArea>

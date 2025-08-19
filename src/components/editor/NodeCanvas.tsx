@@ -31,6 +31,7 @@ function NodeIcon({ type }: { type: NodeType }) {
     fx: Wand2,
     export: Download,
   }[type];
+  if (!Icon) return null;
   return <Icon className="h-4 w-4" style={{ color: typeColor(type) }} />;
 }
 
@@ -38,9 +39,10 @@ interface NodeCanvasProps {
   nodes: NodeItem[];
   setNodes: React.Dispatch<React.SetStateAction<NodeItem[]>>;
   edges: EdgeItem[];
+  setEdges: React.Dispatch<React.SetStateAction<EdgeItem[]>>;
 }
 
-export function NodeCanvas({ nodes, setNodes, edges }: NodeCanvasProps) {
+export function NodeCanvas({ nodes, setNodes, edges, setEdges }: NodeCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -84,8 +86,8 @@ export function NodeCanvas({ nodes, setNodes, edges }: NodeCanvasProps) {
           const a = nodes.find((n) => n.id === e.from);
           const b = nodes.find((n) => n.id === e.to);
           if (!a || !b) return null;
-          const x1 = a.x + 160; const y1 = a.y + 32;
-          const x2 = b.x; const y2 = b.y + 32;
+          const x1 = a.x + 80; const y1 = a.y;
+          const x2 = b.x - 80; const y2 = b.y;
           const dx = Math.max(60, Math.abs(x2 - x1) / 2);
           const path = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
           return <path key={i} d={path} fill="none" stroke={typeColor(a.type)} strokeOpacity={0.6} strokeWidth={2} />;
@@ -95,7 +97,7 @@ export function NodeCanvas({ nodes, setNodes, edges }: NodeCanvasProps) {
       {nodes.map((n) => (
         <div
           key={n.id}
-          className="absolute w-[160px] h-[64px] rounded-xl border border-border bg-background/80 backdrop-blur shadow-2xl cursor-grab active:cursor-grabbing flex items-center justify-between px-3"
+          className="absolute w-[160px] h-[64px] rounded-xl border bg-background/80 backdrop-blur shadow-2xl cursor-grab active:cursor-grabbing flex items-center justify-between px-3"
           style={{ left: n.x, top: n.y, transform: `translate(-50%, -50%)`, borderColor: typeColor(n.type) }}
           onMouseDown={(e) => onMouseDown(e, n.id)}
         >
@@ -107,8 +109,8 @@ export function NodeCanvas({ nodes, setNodes, edges }: NodeCanvasProps) {
             </div>
           </div>
           <Badge variant="outline" className="text-green-400 border-green-400/50">OK</Badge>
-          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-background" style={{ background: typeColor(n.type) }} />
-          <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-background" style={{ background: typeColor(n.type) }} />
+          <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-background bg-card" style={{ borderColor: typeColor(n.type) }} />
+          <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-background bg-card" style={{ borderColor: typeColor(n.type) }} />
         </div>
       ))}
     </div>

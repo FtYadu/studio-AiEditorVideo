@@ -22,6 +22,7 @@ interface CenterAreaProps {
   nodes: NodeItem[];
   setNodes: React.Dispatch<React.SetStateAction<NodeItem[]>>;
   edges: EdgeItem[];
+  setEdges: React.Dispatch<React.SetStateAction<EdgeItem[]>>;
 }
 
 export function CenterArea({ 
@@ -35,7 +36,8 @@ export function CenterArea({
   totalDuration,
   nodes,
   setNodes,
-  edges
+  edges,
+  setEdges
 }: CenterAreaProps) {
   return (
     <div className="h-full flex flex-col bg-background">
@@ -54,7 +56,7 @@ export function CenterArea({
       </div>
       <div className="flex-1 min-h-0">
         {mode === "workflow" ? (
-          <NodeCanvas nodes={nodes} setNodes={setNodes} edges={edges} /> 
+          <NodeCanvas nodes={nodes} setNodes={setNodes} edges={edges} setEdges={setEdges} /> 
         ) : (
           <TimelineView 
             selectedAsset={selectedAsset} 

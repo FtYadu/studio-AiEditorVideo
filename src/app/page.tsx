@@ -59,7 +59,7 @@ export default function AIVideoEditorUI() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [clips, setClips] = useState<Clip[]>([]);
   const [totalDuration, setTotalDuration] = useState(20);
-  const [nodes, setNodes] = useState<NodeItem[]>(initialNodes);
+  const [nodes, setNodes] = useState<NodeItem[]>([]);
   const [edges, setEdges] = useState<EdgeItem[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -274,6 +274,7 @@ export default function AIVideoEditorUI() {
       setEdges(e => e.some(edge => edge.to === 'n2') ? e : [
         ...e,
         { from: "n1", to: "n2" },
+        { from: "n2", to: "n8" },
       ]);
 
 
@@ -309,6 +310,17 @@ export default function AIVideoEditorUI() {
         template: template,
       });
 
+       setNodes(n => n.some(node => node.id === 'n_template') ? n : [
+        ...n, 
+        { id: "n_template", label: template.name, type: "fx", x: 520, y: 220 },
+      ]);
+      setEdges(e => e.some(edge => edge.to === 'n_template') ? e : [
+        ...e,
+        { from: "n1", to: "n_template" },
+        { from: "n_template", to: "n8" },
+      ]);
+
+
       toast({
         title: "✅ Edit Generated",
         description: result.summary,
@@ -326,6 +338,14 @@ export default function AIVideoEditorUI() {
       });
     }
   };
+  
+  const handleUpdateAsset = (assetId: string, updatedProps: Partial<Asset>) => {
+    setAssets(assets => assets.map(a => a.id === assetId ? { ...a, ...updatedProps } : a));
+    if (selectedAsset?.id === assetId) {
+      setSelectedAsset(a => a ? { ...a, ...updatedProps } : null);
+    }
+  };
+
 
   const actions: CommandAction[] = [
     { id: "import", label: "Import Media…", icon: <FolderOpen className="mr-2 h-4 w-4" />, run: handleImportClick },
@@ -382,11 +402,17 @@ export default function AIVideoEditorUI() {
                 nodes={nodes}
                 setNodes={setNodes}
                 edges={edges}
+                setEdges={setEdges}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={collapsedRight ? 4 : 18} minSize={4} maxSize={28}>
-              <Inspector collapsed={collapsedRight} onToggle={() => setCollapsedRight(!collapsedRight)} selectedAsset={selectedAsset} />
+              <Inspector 
+                collapsed={collapsedRight} 
+                onToggle={() => setCollapsedRight(!collapsedRight)} 
+                selectedAsset={selectedAsset}
+                onUpdateAsset={handleUpdateAsset}
+              />
             </ResizablePanel>
           </ResizablePanelGroup>
         </main>
