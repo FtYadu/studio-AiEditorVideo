@@ -108,10 +108,10 @@ export default function AIVideoEditorUI() {
     if (videoRef.current) {
       if (selectedClip) {
         videoRef.current.style.opacity = `${selectedClip.opacity / 100}`;
-        videoRef.current.style.filter = `saturate(${selectedClip.effects.saturation})`;
+        videoRef.current.style.filter = `saturate(${selectedClip.effects.saturation}) contrast(${selectedClip.effects.contrast}) brightness(${selectedClip.effects.exposure})`;
       } else {
         videoRef.current.style.opacity = `1`;
-        videoRef.current.style.filter = `saturate(1)`;
+        videoRef.current.style.filter = `saturate(1) contrast(1) brightness(1)`;
       }
     }
   }, [selectedClip]);
@@ -180,7 +180,7 @@ export default function AIVideoEditorUI() {
             label: newAsset.name,
             color: "bg-primary/50",
             opacity: 100,
-            effects: { saturation: 1.0 },
+            effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
           };
           setClips([newClip]);
           
@@ -226,7 +226,7 @@ export default function AIVideoEditorUI() {
           label: result.captions.substring(0, 20) + '...',
           color: "bg-pink-500/50",
           opacity: 100,
-          effects: { saturation: 1.0 },
+          effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
         }
         setClips(c => [...c, newCaptionClip]);
       }
@@ -289,7 +289,7 @@ export default function AIVideoEditorUI() {
             label: `Scene ${i + 1}`,
             color: i % 2 === 0 ? "bg-primary/50" : "bg-accent/50",
             opacity: 100,
-            effects: { saturation: 1.0 },
+            effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
           });
         }
         setClips(currentClips => [...currentClips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
@@ -368,21 +368,32 @@ export default function AIVideoEditorUI() {
   };
 
   const handleAutoColor = async () => {
-    if (!selectedAsset || selectedAsset.type !== 'video') {
+    if (!selectedClip) {
       toast({
         variant: 'destructive',
-        title: '🚫 No Video Selected',
-        description: 'Please import and select a video asset first.',
+        title: '🚫 No Clip Selected',
+        description: 'Please select a clip on the timeline first.',
       });
       return;
     }
+    const asset = assets.find(a => a.id === selectedClip.assetId);
+    if (!asset) return;
 
     toast({
       title: '🤖 Applying Auto-Color',
       description: 'The AI is analyzing the video for color correction...',
     });
     try {
-      const result = await autoColor({ videoDataUri: selectedAsset.url });
+      const result = await autoColor({ videoDataUri: asset.url });
+
+      handleUpdateClip(selectedClip.id, {
+        effects: {
+            exposure: result.exposure,
+            contrast: result.contrast,
+            saturation: result.saturation,
+            lut: result.lut,
+        }
+      });
 
       setNodes(n => n.some(node => node.id === 'n_color') ? n : [
         ...n,
@@ -398,9 +409,6 @@ export default function AIVideoEditorUI() {
         title: '✅ Auto-Color Complete',
         description: result.summary,
       });
-
-      // In a real app, you would apply these color settings to the clip/track
-      console.log('Auto-Color Result:', result);
 
     } catch (error) {
       console.error('Auto-color failed:', error);

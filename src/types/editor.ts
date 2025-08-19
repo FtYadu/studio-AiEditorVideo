@@ -43,6 +43,9 @@ export interface Clip {
   opacity: number;
   effects: {
     saturation: number;
+    contrast: number;
+    exposure: number;
+    lut: string | null;
   };
 }
 

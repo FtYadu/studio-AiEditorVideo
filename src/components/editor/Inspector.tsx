@@ -23,8 +23,12 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
   const [tab, setTab] = useState("general");
   const [itemName, setItemName] = useState("");
   
+  // Effect states
   const [opacity, setOpacity] = useState(100);
   const [saturation, setSaturation] = useState(1.0);
+  const [contrast, setContrast] = useState(1.0);
+  const [exposure, setExposure] = useState(1.0);
+  const [lut, setLut] = useState<string | null>(null);
 
   const item = selectedClip || selectedAsset;
   const itemType = selectedClip ? 'Clip' : (selectedAsset ? 'Asset' : null);
@@ -34,10 +38,17 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
       setItemName(selectedClip.label);
       setOpacity(selectedClip.opacity);
       setSaturation(selectedClip.effects.saturation);
+      setContrast(selectedClip.effects.contrast);
+      setExposure(selectedClip.effects.exposure);
+      setLut(selectedClip.effects.lut);
     } else if (selectedAsset) {
       setItemName(selectedAsset.name);
+      // Reset effect states when only an asset is selected
       setOpacity(100);
       setSaturation(1.0);
+      setContrast(1.0);
+      setExposure(1.0);
+      setLut(null);
     } else {
       setItemName("");
     }
@@ -55,21 +66,12 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
     }
   };
 
-  const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value, 10);
-    setOpacity(val);
+  const handleEffectChange = (effect: string, value: any) => {
     if (selectedClip) {
-      onUpdateClip(selectedClip.id, { opacity: val });
+      onUpdateClip(selectedClip.id, { effects: { [effect]: value } });
     }
   };
-
-  const handleSaturationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setSaturation(val);
-    if (selectedClip) {
-      onUpdateClip(selectedClip.id, { effects: { saturation: val } });
-    }
-  }
+  
 
   return (
     <div className="h-full flex flex-col bg-secondary/20">
@@ -99,16 +101,22 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
                         <LabeledInput label="Transform" placeholder="X:0 Y:0 Scale:100%" />
                         <div>
                           <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Opacity</div>
-                          <Input type="number" min="0" max="100" className="bg-transparent border-input" placeholder="100" value={opacity} onChange={handleOpacityChange} disabled={!selectedClip} />
+                          <Input type="number" min="0" max="100" className="bg-transparent border-input" placeholder="100" value={opacity} onChange={(e) => { setOpacity(parseInt(e.target.value, 10)); handleEffectChange('opacity', parseInt(e.target.value, 10)); }} disabled={!selectedClip} />
                         </div>
                     </TabsContent>
                     <TabsContent value="effect" className="mt-0 space-y-4">
-                        <LabeledInput label="LUT" placeholder="none" />
-                        <LabeledInput label="Exposure" placeholder="0.0" />
-                        <LabeledInput label="Contrast" placeholder="1.0" />
+                        <LabeledInput label="LUT" placeholder="none" value={lut || 'none'} readOnly disabled={!selectedClip} />
+                        <div>
+                          <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Exposure</div>
+                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={exposure} onChange={(e) => { setExposure(parseFloat(e.target.value)); handleEffectChange('exposure', parseFloat(e.target.value)); }} disabled={!selectedClip} />
+                        </div>
+                         <div>
+                          <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Contrast</div>
+                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={contrast} onChange={(e) => { setContrast(parseFloat(e.target.value)); handleEffectChange('contrast', parseFloat(e.target.value)); }} disabled={!selectedClip} />
+                        </div>
                         <div>
                           <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Saturation</div>
-                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={saturation} onChange={handleSaturationChange} disabled={!selectedClip} />
+                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={saturation} onChange={(e) => { setSaturation(parseFloat(e.target.value)); handleEffectChange('saturation', parseFloat(e.target.value)); }} disabled={!selectedClip} />
                         </div>
                     </TabsContent>
                     <TabsContent value="audio" className="mt-0 space-y-4">
