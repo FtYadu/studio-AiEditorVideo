@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/smart-templates.ts';
+import '@/ai/flows/auto-captioning.ts';
+import '@/ai/flows/auto-scene-detection.ts';
