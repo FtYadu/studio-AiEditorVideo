@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { TopBar } from "@/components/editor/TopBar";
@@ -21,6 +21,7 @@ import { categorizeAsset } from "@/ai/flows/categorize-asset";
 import { generateWaveform } from "@/ai/flows/generate-waveform";
 import { useToast } from "@/hooks/use-toast";
 import { getLutFilter } from "@/lib/lut-filters";
+import { useHistory } from "@/hooks/useHistory";
 
 const templates: Template[] = [
     { 
@@ -61,7 +62,9 @@ export default function AIVideoEditorUI() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
-  const [clips, setClips] = useState<Clip[]>([]);
+  
+  const { state: clips, setState: setClips, undo: undoClips, redo: redoClips, canUndo, canRedo } = useHistory<Clip[]>([]);
+  
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null);
   const [totalDuration, setTotalDuration] = useState(20);
   const [nodes, setNodes] = useState<NodeItem[]>([]);
@@ -86,7 +89,7 @@ export default function AIVideoEditorUI() {
 
   const handleDeleteClip = () => {
     if (selectedClip) {
-      setClips(clips => clips.filter(c => c.id !== selectedClip.id));
+      setClips(clips.filter(c => c.id !== selectedClip.id));
       toast({
         title: "🗑️ Clip Deleted",
         description: `Clip "${selectedClip.label}" was deleted.`,
@@ -97,13 +100,24 @@ export default function AIVideoEditorUI() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = ["INPUT", "TEXTAREA"].includes(target?.tagName || "");
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setCmdOpen((v) => !v);
         return;
       }
-      const target = e.target as HTMLElement;
-      const isInput = ["INPUT", "TEXTAREA"].includes(target?.tagName || "");
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+            if(canRedo) redoClips();
+        } else {
+            if(canUndo) undoClips();
+        }
+        return;
+      }
+
       if (!isInput && e.key === " ") {
         e.preventDefault();
         handlePlayToggle();
@@ -127,7 +141,7 @@ export default function AIVideoEditorUI() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedClip]);
+  }, [selectedClip, canUndo, canRedo, undoClips, redoClips]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -328,7 +342,7 @@ export default function AIVideoEditorUI() {
           transform: { x: 0, y: 0, scale: 100 },
           effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
         }
-        setClips(c => [...c, newCaptionClip]);
+        setClips([...clips, newCaptionClip]);
       }
 
       setNodes(n => n.some(node => node.id === 'n4') ? n : [
@@ -395,7 +409,7 @@ export default function AIVideoEditorUI() {
             effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
           });
         }
-        setClips(currentClips => [...currentClips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
+        setClips([...clips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
       }
       
       setNodes(n => n.some(node => node.id === 'n2') ? n : [
@@ -461,7 +475,7 @@ export default function AIVideoEditorUI() {
                   effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
               };
           });
-          setClips(currentClips => [...currentClips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
+          setClips([...clips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
       }
 
 
@@ -552,8 +566,8 @@ export default function AIVideoEditorUI() {
     }
   };
   
-  const handleUpdateClip = (clipId: string, updatedProps: Partial<Clip>) => {
-    setClips(clips => clips.map(c => {
+  const handleUpdateClip = useCallback((clipId: string, updatedProps: Partial<Clip>) => {
+    setClips(clips.map(c => {
       if (c.id === clipId) {
         const newEffects = updatedProps.effects ? { ...c.effects, ...updatedProps.effects } : c.effects;
         const newTransform = updatedProps.transform ? { ...c.transform, ...updatedProps.transform } : c.transform;
@@ -569,7 +583,10 @@ export default function AIVideoEditorUI() {
         return { ...c, ...updatedProps, effects: newEffects, transform: newTransform };
       });
     }
-  };
+  }, [clips, selectedClip, setClips]);
+  
+  const handleUpdateClipThrottled = useCallback(handleUpdateClip, [setClips, selectedClip]);
+
 
   const handleSplitClip = (clip: Clip, splitTime: number) => {
     if (splitTime <= clip.start || splitTime >= clip.start + clip.dur) {
@@ -599,8 +616,8 @@ export default function AIVideoEditorUI() {
       label: `${clip.label} (2)`,
     };
 
-    setClips(currentClips => [
-      ...currentClips.filter(c => c.id !== clip.id),
+    setClips([
+      ...clips.filter(c => c.id !== clip.id),
       clip1,
       clip2,
     ]);
@@ -706,7 +723,7 @@ export default function AIVideoEditorUI() {
                 }}
                 bladeMode={bladeMode}
                 onSplitClip={handleSplitClip}
-                onUpdateClip={handleUpdateClip}
+                onUpdateClip={handleUpdateClipThrottled}
                 assets={assets}
                 onToggleTrackMute={handleToggleTrackMute}
                 onToggleTrackSolo={handleToggleTrackSolo}
@@ -750,3 +767,5 @@ export default function AIVideoEditorUI() {
     </TooltipProvider>
   );
 }
+
+    

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -279,7 +278,7 @@ export function TimelineView({
                         />
                       ) : (
                         <div className="w-full h-full bg-black grid place-content-center">
-                          <img src="https://placehold.co/1280x720/000000/FFFFFF.png&text=AIVidFlow" alt="Video Preview" className="w-full h-full object-contain" data-ai-hint="video preview screen" />
+                          <img src="https://placehold.co/1280x720/000000/FFFFFF.png" alt="Video Preview" className="w-full h-full object-contain" data-ai-hint="video preview screen" />
                         </div>
                       )}
                       <div className="absolute inset-0 border-8 border-black/30 pointer-events-none"></div>
@@ -335,7 +334,7 @@ export function TimelineView({
                     <div key={t.id} data-track-id={t.id} className={cn("h-12 flex border-b border-border/50", bladeMode && "cursor-crosshair")} onClick={handleTrackClick}>
                       <div className="w-28 shrink-0 flex items-center justify-between text-xs text-muted-foreground bg-secondary/50 border-r border-border font-headline sticky left-0 px-2">
                         <span>{t.name}</span>
-                        {t.type === 'audio' && (
+                        {(t.type === 'audio' || t.type === 'video') && (
                             <div className="flex gap-1">
                                 <Button variant={t.isMuted ? "secondary" : "ghost"} size="icon" className="h-5 w-5" onClick={() => onToggleTrackMute(t.id)}>M</Button>
                                 <Button variant={t.isSoloed ? "secondary" : "ghost"} size="icon" className="h-5 w-5" onClick={() => onToggleTrackSolo(t.id)}>S</Button>
