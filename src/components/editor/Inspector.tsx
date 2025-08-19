@@ -173,5 +173,3 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
     </div>
   );
 }
-
-    

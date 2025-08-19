@@ -80,6 +80,17 @@ export default function AIVideoEditorUI() {
     return `${hours}:${minutes}:${seconds}:${frames}`;
   };
 
+  const handleDeleteClip = () => {
+    if (selectedClip) {
+      setClips(clips => clips.filter(c => c.id !== selectedClip.id));
+      toast({
+        title: "🗑️ Clip Deleted",
+        description: `Clip "${selectedClip.label}" was deleted.`,
+      });
+      setSelectedClip(null);
+    }
+  };
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -105,10 +116,14 @@ export default function AIVideoEditorUI() {
         e.preventDefault();
         setBladeMode(v => !v);
       }
+      if (!isInput && (e.key === "Backspace" || e.key === "Delete")) {
+        e.preventDefault();
+        handleDeleteClip();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [selectedClip]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -632,5 +647,3 @@ export default function AIVideoEditorUI() {
     </TooltipProvider>
   );
 }
-
-    
