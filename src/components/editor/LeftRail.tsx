@@ -48,7 +48,7 @@ function AssetsPane({ onImport, assets, selectedAsset, onAssetClick }: AssetsPan
           ))}
           {assets.length === 0 && Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="aspect-video rounded-md bg-secondary border border-border overflow-hidden">
-               <img src="https://placehold.co/300x200" alt={`Clip ${i+1}`} className="w-full h-full object-cover" data-ai-hint="video footage" />
+               <img src="https://placehold.co/300x200.png" alt={`Clip ${i+1}`} className="w-full h-full object-cover" data-ai-hint="video footage" />
             </div>
           ))}
         </div>
@@ -195,5 +195,3 @@ export function LeftRail({
     </div>
   );
 }
-
-    
