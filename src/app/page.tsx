@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -12,7 +13,7 @@ import { Transport } from "@/components/editor/Transport";
 import { CommandMenu } from "@/components/editor/CommandMenu";
 import { ExportDialog } from "@/components/editor/ExportDialog";
 import { Captions, Download, FolderOpen, Layers, MonitorDown, Scissors, Wand2, Workflow } from "lucide-react";
-import type { CommandAction, Asset, Track, Clip, Template, NodeItem, EdgeItem } from "@/types/editor";
+import type { CommandAction, Asset, Track, Clip, Template, NodeItem, EdgeItem, EditDecision } from "@/types/editor";
 import { autoCaption } from "@/ai/flows/auto-captioning";
 import { autoSceneDetection } from "@/ai/flows/auto-scene-detection";
 import { generatePunchCutEdit } from "@/ai/flows/smart-templates";
@@ -120,6 +121,13 @@ export default function AIVideoEditorUI() {
       }
     }
   }, [selectedClip]);
+
+  useEffect(() => {
+    const body = document.querySelector('body');
+    if (body) {
+        body.style.cursor = bladeMode ? 'crosshair' : 'default';
+    }
+  }, [bladeMode]);
 
   const handlePlayToggle = () => {
     if (videoRef.current) {
@@ -343,6 +351,27 @@ export default function AIVideoEditorUI() {
         template: template,
       });
 
+      const videoTrack = tracks.find(t => t.type === 'video');
+      if (videoTrack) {
+          const newClips = result.editDecisionList.map((decision: EditDecision, i: number) => {
+              const dur = decision.end - decision.start;
+              return {
+                  id: `clip-tpl-${Date.now()}-${i}`,
+                  assetId: selectedAsset.id,
+                  trackId: videoTrack.id,
+                  start: decision.start,
+                  dur: dur,
+                  inPoint: decision.start,
+                  label: `${template.name} ${i + 1}`,
+                  color: "bg-purple-500/50",
+                  opacity: 100,
+                  effects: { saturation: 1.0, contrast: 1.0, exposure: 1.0, lut: null },
+              };
+          });
+          setClips(currentClips => [...currentClips.filter(c => c.trackId !== videoTrack.id), ...newClips]);
+      }
+
+
        setNodes(n => n.some(node => node.id === 'n_template') ? n : [
         ...n, 
         { id: "n_template", label: template.name, type: "fx", x: 520, y: 220 },
@@ -358,9 +387,6 @@ export default function AIVideoEditorUI() {
         title: "✅ Edit Generated",
         description: result.summary,
       });
-      
-      // In a real app, you would handle the result.editedVideoDataUri
-      // For example, create a new asset or a new timeline version.
 
     } catch (error) {
       console.error("Smart template failed:", error);

@@ -97,8 +97,25 @@ export function TimelineView({
   }
 
   const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    handleTimelineClick(e);
-    onClipSelected(null);
+    if (bladeMode) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const percentage = (clickX / rect.width);
+        const newTime = percentage * totalDuration;
+
+        const clickedClip = clips.find(c => {
+            const clipStartPos = (c.start / totalDuration) * rect.width;
+            const clipEndPos = ((c.start + c.dur) / totalDuration) * rect.width;
+            return clickX >= clipStartPos && clickX <= clipEndPos;
+        });
+
+        if (clickedClip) {
+            onSplitClip(clickedClip, newTime);
+        }
+    } else {
+        handleTimelineClick(e);
+        onClipSelected(null);
+    }
   }
   
 
@@ -166,10 +183,10 @@ export function TimelineView({
                   ))}
                 </div>
                 
-                <div className="relative" style={{ width: timelineWidth }} ref={timelineContainerRef} onClick={handleTimelineClick}>
+                <div className="relative" style={{ width: timelineWidth }} ref={timelineContainerRef} onClick={handleTrackClick}>
                    <div ref={playheadRef} className="absolute top-0 z-20 w-0.5 h-full bg-red-500 pointer-events-none" />
                   {tracks.map((t) => (
-                    <div key={t.id} className="h-12 flex border-b border-border/50">
+                    <div key={t.id} className={cn("h-12 flex border-b border-border/50", bladeMode && "cursor-crosshair")} onClick={handleTrackClick}>
                       <div className="w-16 shrink-0 grid place-items-center text-xs text-muted-foreground bg-secondary/50 border-r border-border font-headline sticky left-0">{t.name}</div>
                       <div className="flex-1 relative">
                         {clips.filter((c) => c.trackId === t.id).map((c) => (
@@ -204,3 +221,4 @@ export function TimelineView({
 }
 
     
+

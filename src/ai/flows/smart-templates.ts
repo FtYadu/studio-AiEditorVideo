@@ -1,3 +1,4 @@
+
 // src/ai/flows/smart-templates.ts
 'use server';
 /**
@@ -27,10 +28,13 @@ const GeneratePunchCutEditInputSchema = z.object({
 });
 export type GeneratePunchCutEditInput = z.infer<typeof GeneratePunchCutEditInputSchema>;
 
+const EditDecisionSchema = z.object({
+  start: z.number().describe('The start time of the clip in seconds.'),
+  end: z.number().describe('The end time of the clip in seconds.'),
+});
+
 const GeneratePunchCutEditOutputSchema = z.object({
-  editedVideoDataUri: z
-    .string()
-    .describe("The edited video, as a data URI in base64 encoding."),
+  editDecisionList: z.array(EditDecisionSchema).describe('An array of edit decisions, representing the new timeline clips.'),
   summary: z.string().describe('A summary of the edits that were made.'),
 });
 export type GeneratePunchCutEditOutput = z.infer<typeof GeneratePunchCutEditOutputSchema>;
@@ -53,7 +57,8 @@ Template Instructions: {{{template.instructions}}}
 
 Video: {{media url=videoDataUri}}
 
-Create a punch-cut edit of the video based on the template instructions, and provide a summary of the edits that were made. Return the edited video as a data URI.
+Create a punch-cut edit of the video based on the template instructions. Generate an Edit Decision List (EDL) with start and end times for each new clip.
+Also provide a summary of the edits that were made.
 `,
 });
 

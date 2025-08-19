@@ -1,4 +1,5 @@
 
+
 export type NodeType = "import" | "scene" | "beat" | "transcript" | "caption" | "color" | "fx" | "export";
 
 export interface NodeItem {
@@ -60,4 +61,9 @@ export interface Template {
   description: string;
   instructions: string;
   tag: string;
+}
+
+export interface EditDecision {
+  start: number;
+  end: number;
 }
