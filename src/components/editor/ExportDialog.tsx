@@ -20,14 +20,17 @@ interface ExportDialogProps {
 
 function generateTimelinePrompt(clips: Clip[]): string {
     if (clips.length === 0) {
-        return "An empty timeline.";
+        return "An empty timeline, resulting in a short, silent, black video.";
     }
 
     const sortedClips = [...clips].sort((a, b) => a.start - b.start);
     const descriptions = sortedClips.map(clip => {
         let desc = `a scene of '${clip.label}'`;
+        if (clip.opacity < 100) desc += ` at ${clip.opacity}% opacity`;
+        if (clip.transform.scale !== 100) desc += ` zoomed to ${clip.transform.scale}%`;
         if (clip.effects.saturation < 0.8) desc += " in black and white";
         if (clip.effects.contrast > 1.2) desc += " with high contrast";
+        if (clip.effects.exposure !== 1.0) desc += ` with an exposure of ${clip.effects.exposure}`;
         if (clip.effects.lut) desc += ` with a ${clip.effects.lut} color grade`;
         return desc;
     });

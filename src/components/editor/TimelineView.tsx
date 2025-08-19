@@ -97,13 +97,21 @@ export function TimelineView({
   }
 
   const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+     e.stopPropagation();
     if (bladeMode) {
-        const rect = e.currentTarget.getBoundingClientRect();
+        const rect = timelineContainerRef.current?.getBoundingClientRect();
+        if(!rect) return;
         const clickX = e.clientX - rect.left;
-        const percentage = (clickX / rect.width);
-        const newTime = percentage * totalDuration;
+        
+        const trackElement = (e.target as HTMLElement).closest('[data-track-id]');
+        if (!trackElement) return;
 
-        const clickedClip = clips.find(c => {
+        const trackId = trackElement.getAttribute('data-track-id');
+        const trackClips = clips.filter(c => c.trackId === trackId);
+        
+        const newTime = (clickX / rect.width) * totalDuration;
+
+        const clickedClip = trackClips.find(c => {
             const clipStartPos = (c.start / totalDuration) * rect.width;
             const clipEndPos = ((c.start + c.dur) / totalDuration) * rect.width;
             return clickX >= clipStartPos && clickX <= clipEndPos;
@@ -113,7 +121,6 @@ export function TimelineView({
             onSplitClip(clickedClip, newTime);
         }
     } else {
-        handleTimelineClick(e);
         onClipSelected(null);
     }
   }
@@ -140,7 +147,7 @@ export function TimelineView({
                         />
                       ) : (
                         <div className="w-full h-full bg-black grid place-content-center">
-                          <img src="https://placehold.co/1280x720" alt="Video Preview" className="w-full h-full object-contain" data-ai-hint="video preview screen" />
+                          <img src="https://placehold.co/1280x720/000000/FFFFFF.png&text=AIVidFlow" alt="Video Preview" className="w-full h-full object-contain" data-ai-hint="video preview screen" />
                         </div>
                       )}
                       <div className="absolute inset-0 border-8 border-black/30 pointer-events-none"></div>
@@ -172,7 +179,7 @@ export function TimelineView({
                 </div>
               </div>
 
-              <div className={cn("flex-1 overflow-auto relative", bladeMode && "cursor-crosshair")} onClick={handleTrackClick}>
+              <div className={cn("flex-1 overflow-auto relative", bladeMode && "cursor-crosshair")} onClick={(e) => e.stopPropagation()}>
                 <div 
                   className="h-8 sticky top-0 z-10 bg-secondary/80 backdrop-blur-sm text-[10px] text-muted-foreground flex items-end pl-16 border-b border-border cursor-pointer" 
                   style={{ width: timelineWidth }}
@@ -183,10 +190,10 @@ export function TimelineView({
                   ))}
                 </div>
                 
-                <div className="relative" style={{ width: timelineWidth }} ref={timelineContainerRef} onClick={handleTrackClick}>
+                <div className="relative" style={{ width: timelineWidth }} ref={timelineContainerRef} onClick={handleTimelineClick}>
                    <div ref={playheadRef} className="absolute top-0 z-20 w-0.5 h-full bg-red-500 pointer-events-none" />
                   {tracks.map((t) => (
-                    <div key={t.id} className={cn("h-12 flex border-b border-border/50", bladeMode && "cursor-crosshair")} onClick={handleTrackClick}>
+                    <div key={t.id} data-track-id={t.id} className={cn("h-12 flex border-b border-border/50", bladeMode && "cursor-crosshair")} onClick={handleTrackClick}>
                       <div className="w-16 shrink-0 grid place-items-center text-xs text-muted-foreground bg-secondary/50 border-r border-border font-headline sticky left-0">{t.name}</div>
                       <div className="flex-1 relative">
                         {clips.filter((c) => c.trackId === t.id).map((c) => (
@@ -219,6 +226,3 @@ export function TimelineView({
     </div>
   );
 }
-
-    
-
