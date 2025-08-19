@@ -68,11 +68,13 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
 
   const handleEffectChange = (effect: string, value: any) => {
     if (selectedClip) {
-      onUpdateClip(selectedClip.id, { effects: { [effect]: value } });
+      const currentEffects = selectedClip.effects;
+      onUpdateClip(selectedClip.id, {
+        effects: { ...currentEffects, [effect]: value },
+      });
     }
   };
   
-
   return (
     <div className="h-full flex flex-col bg-secondary/20">
       <div className="h-10 border-b border-border flex items-center px-2 gap-2">
@@ -101,22 +103,22 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
                         <LabeledInput label="Transform" placeholder="X:0 Y:0 Scale:100%" />
                         <div>
                           <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Opacity</div>
-                          <Input type="number" min="0" max="100" className="bg-transparent border-input" placeholder="100" value={opacity} onChange={(e) => { setOpacity(parseInt(e.target.value, 10)); handleEffectChange('opacity', parseInt(e.target.value, 10)); }} disabled={!selectedClip} />
+                          <Input type="number" min="0" max="100" className="bg-transparent border-input" placeholder="100" value={opacity} onChange={(e) => { const val = parseInt(e.target.value, 10); setOpacity(val); handleEffectChange('opacity', val); }} disabled={!selectedClip} />
                         </div>
                     </TabsContent>
                     <TabsContent value="effect" className="mt-0 space-y-4">
                         <LabeledInput label="LUT" placeholder="none" value={lut || 'none'} readOnly disabled={!selectedClip} />
                         <div>
                           <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Exposure</div>
-                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={exposure} onChange={(e) => { setExposure(parseFloat(e.target.value)); handleEffectChange('exposure', parseFloat(e.target.value)); }} disabled={!selectedClip} />
+                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={exposure} onChange={(e) => { const val = parseFloat(e.target.value); setExposure(val); handleEffectChange('exposure', val); }} disabled={!selectedClip} />
                         </div>
                          <div>
                           <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Contrast</div>
-                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={contrast} onChange={(e) => { setContrast(parseFloat(e.target.value)); handleEffectChange('contrast', parseFloat(e.target.value)); }} disabled={!selectedClip} />
+                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={contrast} onChange={(e) => { const val = parseFloat(e.target.value); setContrast(val); handleEffectChange('contrast', val); }} disabled={!selectedClip} />
                         </div>
                         <div>
                           <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Saturation</div>
-                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={saturation} onChange={(e) => { setSaturation(parseFloat(e.target.value)); handleEffectChange('saturation', parseFloat(e.target.value)); }} disabled={!selectedClip} />
+                          <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={saturation} onChange={(e) => { const val = parseFloat(e.target.value); setSaturation(val); handleEffectChange('saturation', val); }} disabled={!selectedClip} />
                         </div>
                     </TabsContent>
                     <TabsContent value="audio" className="mt-0 space-y-4">
