@@ -121,7 +121,7 @@ The application will be available at `http://localhost:3000`.
 1.  Create a new file in `src/ai/flows/`, e.g., `new-agent.ts`.
 2.  Follow the existing structure: define input/output schemas with Zod, create an `ai.definePrompt`, and wrap it in an `ai.defineFlow`.
 3.  Export an async function that calls your flow.
-4.  Import the new flow in `src/ai/dev.ts` to register it with Genkit.
+4.  Import and export your new flow in `src/ai/index.ts` to make it available to the Genkit registry.
 5.  Import the exported function in `src/app/page.tsx` and call it from a new UI element.
 
 ---
