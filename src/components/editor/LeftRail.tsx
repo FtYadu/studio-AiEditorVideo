@@ -52,20 +52,6 @@ function AssetsPane({ onImport, assets, selectedAsset, onAssetClick }: AssetsPan
             </div>
           ))}
         </div>
-        <div className="px-3 pb-3">
-          <h4 className="font-headline text-xs uppercase tracking-wide text-muted-foreground mt-2 mb-1">Smart Bins</h4>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              "B‑roll wide",
-              "Talking head",
-              "Smiles",
-              "Noisy audio",
-              "Out of focus",
-            ].map((b) => (
-              <div key={b} className="px-2 py-1 rounded bg-secondary border border-border text-xs text-muted-foreground">{b}</div>
-            ))}
-          </div>
-        </div>
       </ScrollArea>
     </div>
   );

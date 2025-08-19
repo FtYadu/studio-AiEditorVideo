@@ -35,7 +35,6 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
   const [lut, setLut] = useState<string | null>(null);
 
   const item = selectedClip || selectedAsset;
-  const itemType = selectedClip ? 'Clip' : (selectedAsset ? 'Asset' : null);
 
   useEffect(() => {
     if (selectedClip) {
@@ -99,9 +98,6 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
           <TabsList className="m-2 bg-background/50 border-border">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="effect">Effect</TabsTrigger>
-            <TabsTrigger value="audio">Audio</TabsTrigger>
-            <TabsTrigger value="ai">AI</TabsTrigger>
-            <TabsTrigger value="meta">Meta</TabsTrigger>
           </TabsList>
           <div className="flex-1 min-h-0">
             <ScrollArea className="h-full">
@@ -115,7 +111,6 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
                             </Button>
                           </TooltipWrap>
                         </div>
-                        <LabeledInput label="In/Out" placeholder="00:00:02:12 – 00:00:08:14" />
                         <div>
                           <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Transform</div>
                           <div className="grid grid-cols-3 gap-2">
@@ -143,35 +138,6 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
                           <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Saturation</div>
                           <Input type="number" min="0" max="2" step="0.05" className="bg-transparent border-input" placeholder="1.0" value={saturation} onChange={(e) => { const val = parseFloat(e.target.value); setSaturation(val); handleUpdate('clip', { effects: { ...selectedClip!.effects, saturation: val } }); }} disabled={!selectedClip} />
                         </div>
-                    </TabsContent>
-                    <TabsContent value="audio" className="mt-0 space-y-4">
-                        <LabeledInput label="Volume" placeholder="-3 dB" />
-                        <LabeledInput label="Denoise" placeholder="Medium" />
-                        <LabeledInput label="Duck Music" placeholder="-12 dB on speech" />
-                    </TabsContent>
-                    <TabsContent value="ai" className="mt-0 space-y-4">
-                        <LabeledInput label="Recipe" placeholder="TikTok 60s Punch‑Cut" />
-                        <LabeledInput label="Aggressiveness" placeholder="High" />
-                        <LabeledInput label="Subtitle Style" placeholder="Reels Bold" />
-                        <LabeledInput label="Brand Colors" placeholder="#6366F1 / #A855F7" />
-                    </TabsContent>
-                    <TabsContent value="meta" className="mt-0 space-y-4">
-                        {itemType && <LabeledInput label="Type" placeholder={itemType} value={itemType} readOnly />}
-                        {selectedAsset && !selectedClip && (
-                          <>
-                            <LabeledInput label="Camera" placeholder="FX30 4K24" />
-                            <LabeledInput label="Lens" placeholder="35mm" />
-                            <LabeledInput label="Creator" placeholder="Yadu" />
-                            <LabeledInput label="Asset ID" placeholder={selectedAsset.id} value={selectedAsset.id} readOnly />
-                            <LabeledInput label="Asset Type" placeholder={selectedAsset.type} value={selectedAsset.type} readOnly />
-                          </>
-                        )}
-                         {selectedClip && (
-                          <>
-                             <LabeledInput label="Clip ID" placeholder={selectedClip.id} value={selectedClip.id} readOnly />
-                             <LabeledInput label="Asset ID" placeholder={selectedClip.assetId} value={selectedClip.assetId} readOnly />
-                          </>
-                        )}
                     </TabsContent>
                 </div>
             </ScrollArea>
