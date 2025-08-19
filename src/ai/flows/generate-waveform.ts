@@ -49,18 +49,10 @@ const generateWaveformFlow = ai.defineFlow(
     outputSchema: GenerateWaveformOutputSchema,
   },
   async input => {
-    // In a real application, this would involve complex audio processing.
-    // Here, we'll simulate it for demonstration purposes, as the prompt will do the work.
     const {output} = await prompt(input);
-    
-    if (output) {
-      return output;
+    if (!output) {
+      throw new Error("AI failed to generate waveform data.");
     }
-    
-    // Fallback to generating random data if the prompt fails
-    const waveform = Array.from({ length: 100 }, () => Math.floor(Math.random() * 101));
-    return { waveform };
+    return output;
   }
 );
-
-    
