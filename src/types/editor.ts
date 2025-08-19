@@ -47,3 +47,10 @@ export interface Track {
   name: string;
   type: TrackType;
 }
+
+export interface Template {
+  name: string;
+  description: string;
+  instructions: string;
+  tag: string;
+}

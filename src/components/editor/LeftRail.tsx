@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -7,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Film, Layers, PanelLeft, PanelRight, Search, Upload, Wand2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { TooltipWrap } from "./ui-helpers";
-import type { Asset } from "@/types/editor";
+import type { Asset, Template } from "@/types/editor";
 import { cn } from "@/lib/utils";
 
 interface AssetsPaneProps {
@@ -70,22 +71,23 @@ function AssetsPane({ onImport, assets, selectedAsset, onAssetClick }: AssetsPan
   );
 }
 
-function TemplatesPane() {
+interface TemplatesPaneProps {
+  templates: Template[];
+  onTemplateSelect: (template: Template) => void;
+}
+
+function TemplatesPane({ templates, onTemplateSelect }: TemplatesPaneProps) {
   return (
     <ScrollArea className="h-full">
       <div className="p-3 space-y-3">
-        {[
-          { name: "TikTok 60s Punch‑Cut", desc: "Fast cuts, captions, beat sync", tag: "Reels/Shorts" },
-          { name: "Talking‑Head Explainer", desc: "Jump cuts, lower‑thirds, denoise", tag: "YouTube" },
-          { name: "Product Reel", desc: "Clean wipes, brand colors, hero shots", tag: "Ads" },
-        ].map((t) => (
+        {templates.map((t) => (
           <div key={t.name} className="p-3 rounded-lg bg-secondary border border-border">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium font-headline">{t.name}</div>
-                <div className="text-xs text-muted-foreground">{t.desc}</div>
+                <div className="text-xs text-muted-foreground">{t.description}</div>
               </div>
-              <Button size="sm">Use</Button>
+              <Button size="sm" onClick={() => onTemplateSelect(t)}>Use</Button>
             </div>
             <div className="mt-2 text-[10px] text-muted-foreground/80">{t.tag}</div>
           </div>
@@ -133,9 +135,22 @@ interface LeftRailProps {
   assets: Asset[];
   selectedAsset: Asset | null;
   onAssetClick: (asset: Asset) => void;
+  templates: Template[];
+  onTemplateSelect: (template: Template) => void;
 }
 
-export function LeftRail({ collapsed, onToggle, onAutoCaption, onAutoCut, onImport, assets, selectedAsset, onAssetClick }: LeftRailProps) {
+export function LeftRail({ 
+  collapsed, 
+  onToggle, 
+  onAutoCaption, 
+  onAutoCut, 
+  onImport, 
+  assets, 
+  selectedAsset, 
+  onAssetClick,
+  templates,
+  onTemplateSelect
+}: LeftRailProps) {
   const [tab, setTab] = useState<"assets" | "templates" | "agents">("assets");
 
   return (
@@ -168,7 +183,7 @@ export function LeftRail({ collapsed, onToggle, onAutoCaption, onAutoCut, onImpo
           {!collapsed && (
             <div className="h-full">
               {tab === "assets" && <AssetsPane onImport={onImport} assets={assets} selectedAsset={selectedAsset} onAssetClick={onAssetClick} />}
-              {tab === "templates" && <TemplatesPane />}
+              {tab === "templates" && <TemplatesPane templates={templates} onTemplateSelect={onTemplateSelect} />}
               {tab === "agents" && <AgentsPane onAutoCaption={onAutoCaption} onAutoCut={onAutoCut} />}
             </div>
           )}

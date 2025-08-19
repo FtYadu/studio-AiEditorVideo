@@ -12,10 +12,32 @@ import { Transport } from "@/components/editor/Transport";
 import { CommandMenu } from "@/components/editor/CommandMenu";
 import { ExportDialog } from "@/components/editor/ExportDialog";
 import { Captions, Download, FolderOpen, Layers, MonitorDown, Wand2, Workflow } from "lucide-react";
-import type { CommandAction, Asset, Track, Clip } from "@/types/editor";
+import type { CommandAction, Asset, Track, Clip, Template } from "@/types/editor";
 import { autoCaption } from "@/ai/flows/auto-captioning";
 import { autoSceneDetection } from "@/ai/flows/auto-scene-detection";
+import { generatePunchCutEdit } from "@/ai/flows/smart-templates";
 import { useToast } from "@/hooks/use-toast";
+
+const templates: Template[] = [
+    { 
+      name: "TikTok 60s Punch‑Cut", 
+      description: "Fast cuts, captions, beat sync", 
+      instructions: "Create a fast-paced, 60-second video with punchy cuts synchronized to a popular TikTok audio track. Add auto-captions with a bold, engaging font.", 
+      tag: "Reels/Shorts" 
+    },
+    { 
+      name: "Talking‑Head Explainer", 
+      description: "Jump cuts, lower‑thirds, denoise", 
+      instructions: "Edit a talking-head video to be concise and clear. Use jump cuts to remove pauses, add lower-third graphics to introduce key points, and apply audio denoising.", 
+      tag: "YouTube" 
+    },
+    { 
+      name: "Product Reel", 
+      description: "Clean wipes, brand colors, hero shots", 
+      instructions: "Create a sleek product showcase. Use clean wipe transitions, incorporate the brand's color palette, and highlight key product features with 'hero shots'.", 
+      tag: "Ads" 
+    },
+];
 
 export default function AIVideoEditorUI() {
   const [mode, setMode] = useState<"workflow" | "edit">("workflow");
@@ -236,11 +258,46 @@ export default function AIVideoEditorUI() {
     }
   };
 
+  const handleGeneratePunchCutEdit = async (template: Template) => {
+    if (!selectedAsset || selectedAsset.type !== 'video') {
+      toast({
+        variant: "destructive",
+        title: "🚫 No Video Selected",
+        description: "Please import and select a video asset first.",
+      });
+      return;
+    }
+
+    toast({ title: `🤖 Applying Template: ${template.name}`, description: "The AI is generating a new edit..." });
+    try {
+      const result = await generatePunchCutEdit({
+        videoDataUri: selectedAsset.url,
+        template: template,
+      });
+
+      toast({
+        title: "✅ Edit Generated",
+        description: result.summary,
+      });
+      
+      // In a real app, you would handle the result.editedVideoDataUri
+      // For example, create a new asset or a new timeline version.
+
+    } catch (error) {
+      console.error("Smart template failed:", error);
+      toast({
+        variant: "destructive",
+        title: "🚫 Edit Generation Failed",
+        description: "Could not apply the smart template. Please try again.",
+      });
+    }
+  };
+
   const actions: CommandAction[] = [
     { id: "import", label: "Import Media…", icon: <FolderOpen className="mr-2 h-4 w-4" />, run: handleImportClick },
     { id: "captrack", label: "Create Caption Track", icon: <Captions className="mr-2 h-4 w-4" />, run: handleAutoCaption },
     { id: "autocut", label: "Run Auto-Cut", icon: <Wand2 className="mr-2 h-4 w-4" />, run: handleAutoSceneDetection },
-    { id: "recipe60", label: "Run Recipe: TikTok 60s Punch‑Cut", icon: <Wand2 className="mr-2 h-4 w-4" />, run: () => alert("Recipe") },
+    { id: "recipe60", label: "Run Recipe: TikTok 60s Punch‑Cut", icon: <Wand2 className="mr-2 h-4 w-4" />, run: () => handleGeneratePunchCutEdit(templates[0]) },
     { id: "draft", label: "Toggle Draft/Full Preview", icon: <MonitorDown className="mr-2 h-4 w-4" />, run: () => setDraftQuality((d) => !d) },
     { id: "export", label: "Open Export", icon: <Download className="mr-2 h-4 w-4" />, run: () => setExportOpen(true) },
     { id: "workflow", label: "Switch to Workflow", icon: <Workflow className="mr-2 h-4 w-4" />, run: () => setMode("workflow") },
@@ -273,6 +330,8 @@ export default function AIVideoEditorUI() {
                 assets={assets}
                 selectedAsset={selectedAsset}
                 onAssetClick={setSelectedAsset}
+                templates={templates}
+                onTemplateSelect={handleGeneratePunchCutEdit}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
