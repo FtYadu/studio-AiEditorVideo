@@ -1,8 +1,9 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Scissors, Mic, MicOff } from "lucide-react";
+import { Scissors } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Asset, Clip, Track } from "@/types/editor";
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable";

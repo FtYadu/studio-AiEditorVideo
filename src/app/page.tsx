@@ -720,8 +720,6 @@ export default function AIVideoEditorUI() {
       case 'export':
         setExportOpen(true);
         break;
-      // You can add cases for other node types like 'fx' if they have actions
-      // For example, re-running a specific template
     }
   };
 

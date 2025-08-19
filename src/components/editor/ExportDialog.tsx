@@ -48,7 +48,8 @@ function generateTimelinePrompt(clips: Clip[]): string {
         return desc;
     });
 
-    return `A video that starts with ${descriptions.join(", followed by ")}. The total duration is ${sortedClips[sortedClips.length -1].start + sortedClips[sortedClips.length -1].dur} seconds.`;
+    const totalDuration = sortedClips.length > 0 ? sortedClips[sortedClips.length - 1].start + sortedClips[sortedClips.length - 1].dur : 0;
+    return `A video that starts with ${descriptions.join(", followed by ")}. The total duration is ${totalDuration.toFixed(1)} seconds.`;
 }
 
 
@@ -62,6 +63,7 @@ export function ExportDialog({ open, onOpenChange, clips }: ExportDialogProps) {
     if (isOpen) {
       const generatedPrompt = generateTimelinePrompt(clips);
       setPrompt(generatedPrompt);
+      setGeneratedVideo(null);
     }
     onOpenChange(isOpen);
   }
