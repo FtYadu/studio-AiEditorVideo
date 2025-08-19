@@ -16,6 +16,7 @@ import type { CommandAction, Asset, Track, Clip, Template, NodeItem, EdgeItem } 
 import { autoCaption } from "@/ai/flows/auto-captioning";
 import { autoSceneDetection } from "@/ai/flows/auto-scene-detection";
 import { generatePunchCutEdit } from "@/ai/flows/smart-templates";
+import { autoColor } from "@/ai/flows/auto-color";
 import { useToast } from "@/hooks/use-toast";
 
 const templates: Template[] = [
@@ -338,6 +339,51 @@ export default function AIVideoEditorUI() {
       });
     }
   };
+
+  const handleAutoColor = async () => {
+    if (!selectedAsset || selectedAsset.type !== 'video') {
+      toast({
+        variant: 'destructive',
+        title: '🚫 No Video Selected',
+        description: 'Please import and select a video asset first.',
+      });
+      return;
+    }
+
+    toast({
+      title: '🤖 Applying Auto-Color',
+      description: 'The AI is analyzing the video for color correction...',
+    });
+    try {
+      const result = await autoColor({ videoDataUri: selectedAsset.url });
+
+      setNodes(n => n.some(node => node.id === 'n_color') ? n : [
+        ...n,
+        { id: 'n_color', label: 'Auto Color', type: 'color', x: 520, y: 140 },
+      ]);
+      setEdges(e => e.some(edge => edge.to === 'n_color') ? e : [
+        ...e,
+        { from: 'n1', to: 'n_color' },
+        { from: 'n_color', to: 'n8' },
+      ]);
+      
+      toast({
+        title: '✅ Auto-Color Complete',
+        description: result.summary,
+      });
+
+      // In a real app, you would apply these color settings to the clip/track
+      console.log('Auto-Color Result:', result);
+
+    } catch (error) {
+      console.error('Auto-color failed:', error);
+      toast({
+        variant: 'destructive',
+        title: '🚫 Auto-Color Failed',
+        description: 'Could not apply auto-color. Please try again.',
+      });
+    }
+  };
   
   const handleUpdateAsset = (assetId: string, updatedProps: Partial<Asset>) => {
     setAssets(assets => assets.map(a => a.id === assetId ? { ...a, ...updatedProps } : a));
@@ -351,6 +397,7 @@ export default function AIVideoEditorUI() {
     { id: "import", label: "Import Media…", icon: <FolderOpen className="mr-2 h-4 w-4" />, run: handleImportClick },
     { id: "captrack", label: "Create Caption Track", icon: <Captions className="mr-2 h-4 w-4" />, run: handleAutoCaption },
     { id: "autocut", label: "Run Auto-Cut", icon: <Wand2 className="mr-2 h-4 w-4" />, run: handleAutoSceneDetection },
+    { id: "autocolor", label: "Run Auto-Color", icon: <Wand2 className="mr-2 h-4 w-4" />, run: handleAutoColor },
     { id: "recipe60", label: "Run Recipe: TikTok 60s Punch‑Cut", icon: <Wand2 className="mr-2 h-4 w-4" />, run: () => handleGeneratePunchCutEdit(templates[0]) },
     { id: "draft", label: "Toggle Draft/Full Preview", icon: <MonitorDown className="mr-2 h-4 w-4" />, run: () => setDraftQuality((d) => !d) },
     { id: "export", label: "Open Export", icon: <Download className="mr-2 h-4 w-4" />, run: () => setExportOpen(true) },
@@ -380,6 +427,7 @@ export default function AIVideoEditorUI() {
                 onToggle={() => setCollapsedLeft(!collapsedLeft)}
                 onAutoCaption={handleAutoCaption}
                 onAutoCut={handleAutoSceneDetection}
+                onAutoColor={handleAutoColor}
                 onImport={handleImportClick}
                 assets={assets}
                 selectedAsset={selectedAsset}

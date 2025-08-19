@@ -42,7 +42,7 @@ function AssetsPane({ onImport, assets, selectedAsset, onAssetClick }: AssetsPan
                {asset.type === 'video' ? (
                   <video src={asset.url} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full object-cover bg-secondary grid place-content-center text-muted-foreground text-xs">{asset.name}</div>
+                  <div className="w-full h-full object-cover bg-secondary grid place-content-center text-xs text-muted-foreground">{asset.name}</div>
                 )}
             </div>
           ))}
@@ -100,13 +100,14 @@ function TemplatesPane({ templates, onTemplateSelect }: TemplatesPaneProps) {
 interface AgentsPaneProps {
   onAutoCaption: () => void;
   onAutoCut: () => void;
+  onAutoColor: () => void;
 }
 
-function AgentsPane({ onAutoCaption, onAutoCut }: AgentsPaneProps) {
+function AgentsPane({ onAutoCaption, onAutoCut, onAutoColor }: AgentsPaneProps) {
   const agents = [
     { name: "Auto‑Cut", desc: "Detect scenes and punch‑cut", action: onAutoCut },
     { name: "Auto‑Caption", desc: "ASR + styling presets", action: onAutoCaption },
-    { name: "Auto‑Color", desc: "LUT + exposure + curves", action: () => alert("Auto-Color not implemented") },
+    { name: "Auto‑Color", desc: "LUT + exposure + curves", action: onAutoColor },
   ];
 
   return (
@@ -131,6 +132,7 @@ interface LeftRailProps {
   onToggle: () => void;
   onAutoCaption: () => void;
   onAutoCut: () => void;
+  onAutoColor: () => void;
   onImport: () => void;
   assets: Asset[];
   selectedAsset: Asset | null;
@@ -143,7 +145,8 @@ export function LeftRail({
   collapsed, 
   onToggle, 
   onAutoCaption, 
-  onAutoCut, 
+  onAutoCut,
+  onAutoColor,
   onImport, 
   assets, 
   selectedAsset, 
@@ -184,7 +187,7 @@ export function LeftRail({
             <div className="h-full">
               {tab === "assets" && <AssetsPane onImport={onImport} assets={assets} selectedAsset={selectedAsset} onAssetClick={onAssetClick} />}
               {tab === "templates" && <TemplatesPane templates={templates} onTemplateSelect={onTemplateSelect} />}
-              {tab === "agents" && <AgentsPane onAutoCaption={onAutoCaption} onAutoCut={onAutoCut} />}
+              {tab === "agents" && <AgentsPane onAutoCaption={onAutoCaption} onAutoCut={onAutoCut} onAutoColor={onAutoColor} />}
             </div>
           )}
         </div>
