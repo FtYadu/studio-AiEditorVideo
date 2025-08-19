@@ -64,7 +64,7 @@ export function CenterArea({
           Dropped frames: 0
         </div>
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0" onClick={() => onClipSelected(null)}>
         {mode === "workflow" ? (
           <NodeCanvas nodes={nodes} setNodes={setNodes} edges={edges} setEdges={setEdges} /> 
         ) : (
@@ -86,5 +86,3 @@ export function CenterArea({
     </div>
   );
 }
-
-    

@@ -604,6 +604,7 @@ export default function AIVideoEditorUI() {
                 setEdges={setEdges}
                 selectedClip={selectedClip}
                 onClipSelected={(clip) => {
+                  if (bladeMode) return;
                   if (selectedAsset) videoRef.current!.src = selectedAsset.url;
                   setSelectedClip(clip)
                 }}
@@ -620,6 +621,7 @@ export default function AIVideoEditorUI() {
                 selectedClip={selectedClip}
                 onUpdateAsset={handleUpdateAsset}
                 onUpdateClip={handleUpdateClip}
+                onDeleteClip={handleDeleteClip}
               />
             </ResizablePanel>
           </ResizablePanelGroup>
@@ -642,7 +644,7 @@ export default function AIVideoEditorUI() {
           actions={actions}
         />
 
-        <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
+        <ExportDialog open={exportOpen} onOpenChange={setExportOpen} clips={clips} />
       </div>
     </TooltipProvider>
   );

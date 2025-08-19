@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PanelLeft, PanelRight } from "lucide-react";
+import { PanelLeft, PanelRight, Trash2 } from "lucide-react";
 import { LabeledInput, TooltipWrap } from "./ui-helpers";
 import type { Asset, Clip } from "@/types/editor";
 import { Input } from "../ui/input";
@@ -17,9 +17,10 @@ interface InspectorProps {
   selectedClip: Clip | null;
   onUpdateAsset: (assetId: string, updatedProps: Partial<Asset>) => void;
   onUpdateClip: (clipId: string, updatedProps: Partial<Clip>) => void;
+  onDeleteClip: () => void;
 }
 
-export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, onUpdateAsset, onUpdateClip }: InspectorProps) {
+export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, onUpdateAsset, onUpdateClip, onDeleteClip }: InspectorProps) {
   const [tab, setTab] = useState("general");
   const [itemName, setItemName] = useState("");
   
@@ -106,7 +107,14 @@ export function Inspector({ collapsed, onToggle, selectedAsset, selectedClip, on
             <ScrollArea className="h-full">
                 <div className="p-3 space-y-4">
                     <TabsContent value="general" className="mt-0 space-y-4">
-                        <LabeledInput label="Name" placeholder="Item Name" value={itemName} onChange={handleNameChange} onBlur={handleNameBlur} />
+                        <div className="flex gap-2">
+                          <LabeledInput label="Name" placeholder="Item Name" value={itemName} onChange={handleNameChange} onBlur={handleNameBlur} className="flex-1" />
+                          <TooltipWrap label="Delete Clip">
+                            <Button variant="destructive" size="icon" className="shrink-0 mt-5" onClick={onDeleteClip} disabled={!selectedClip}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipWrap>
+                        </div>
                         <LabeledInput label="In/Out" placeholder="00:00:02:12 – 00:00:08:14" />
                         <div>
                           <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Transform</div>

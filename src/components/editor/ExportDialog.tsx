@@ -1,27 +1,54 @@
+
 "use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { ChevronDown, Download, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { LabeledInput } from "./ui-helpers";
 import { exportVideo } from "@/ai/flows/export-video";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "../ui/textarea";
+import { Clip } from "@/types/editor";
 
 interface ExportDialogProps {
     open: boolean;
     onOpenChange: (v: boolean) => void;
+    clips: Clip[];
 }
 
-export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
+function generateTimelinePrompt(clips: Clip[]): string {
+    if (clips.length === 0) {
+        return "An empty timeline.";
+    }
+
+    const sortedClips = [...clips].sort((a, b) => a.start - b.start);
+    const descriptions = sortedClips.map(clip => {
+        let desc = `a scene of '${clip.label}'`;
+        if (clip.effects.saturation < 0.8) desc += " in black and white";
+        if (clip.effects.contrast > 1.2) desc += " with high contrast";
+        if (clip.effects.lut) desc += ` with a ${clip.effects.lut} color grade`;
+        return desc;
+    });
+
+    return `A video that starts with ${descriptions.join(", then ")}.`;
+}
+
+
+export function ExportDialog({ open, onOpenChange, clips }: ExportDialogProps) {
   const [isExporting, setIsExporting] = useState(false);
-  const [prompt, setPrompt] = useState("A majestic dragon soaring over a mystical forest at dawn.");
+  const [prompt, setPrompt] = useState("");
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      const generatedPrompt = generateTimelinePrompt(clips);
+      setPrompt(generatedPrompt);
+    }
+    onOpenChange(isOpen);
+  }
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -52,7 +79,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[560px] bg-background border-border">
         <DialogHeader>
           <DialogTitle className="font-headline">Export Video</DialogTitle>
@@ -61,18 +88,18 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             <div>
               <LabeledInput 
                 label="Preset" 
-                value="AI Generation (Veo)" 
+                value="AI Generation (Timeline)" 
                 readOnly 
               />
             </div>
             
             <div>
-              <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Prompt</div>
+              <div className="text-[10px] font-headline uppercase tracking-wider text-muted-foreground mb-1">Generated Prompt</div>
               <Textarea 
-                placeholder="Enter a prompt for video generation..." 
+                placeholder="Timeline prompt will be generated here..." 
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="bg-transparent border-input"
+                className="bg-transparent border-input h-32"
               />
             </div>
           
@@ -86,7 +113,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isExporting}>Close</Button>
-          <Button onClick={handleExport} disabled={isExporting}>
+          <Button onClick={handleExport} disabled={isExporting || !prompt}>
             {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin"/> : <Download className="h-4 w-4 mr-2"/>}
             {isExporting ? "Exporting..." : "Export"}
           </Button>
