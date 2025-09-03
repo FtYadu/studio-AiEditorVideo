@@ -4,7 +4,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import type { EdgeItem, NodeItem, NodeType } from '@/types/editor';
 import { Badge } from '@/components/ui/badge';
-import { Captions, Download, FolderOpen, Music2, Scissors, Settings, Wand2, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Captions, Download, FolderOpen, Music2, Scissors, Settings, Wand2, CheckCircle2, XCircle, Loader2, AudioWaveform } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function typeColor(t: NodeType): string {
@@ -31,6 +31,7 @@ function NodeIcon({ type }: { type: NodeType }) {
     color: Settings,
     fx: Wand2,
     export: Download,
+    waveform: AudioWaveform,
   }[type];
   if (!Icon) return null;
   return <Icon className="h-4 w-4" style={{ color: typeColor(type) }} />;
