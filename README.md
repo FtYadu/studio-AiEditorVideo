@@ -138,7 +138,7 @@ Copy `.env.example` to `.env` and provide values for the required variables. At 
 ```bash
 cp .env.example .env
 ```
-See `.env.example` for all supported variables such as `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and deployment IDs.
+See `.env.example` for all supported variables such as `AI_PROVIDER` to select an LLM, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and deployment IDs.
 
 ### Security & Secrets
 
