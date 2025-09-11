@@ -4,6 +4,10 @@ Welcome to the official documentation for AIVidFlow, a next-generation video edi
 
 ---
 
+## Architecture Overview
+
+AIVidFlow consists of a Next.js 15 frontend, a suite of Genkit AI flows for backend processing, and Firebase App Hosting for deployment. The frontend communicates with server-side flows and can integrate with various AI providers via modular adapters.
+
 ## 1. Feature List
 
 AIVidFlow is designed to be a robust, professional-grade editor. Here are its core features:
@@ -129,12 +133,12 @@ The application will be available at `http://localhost:3000`.
 ## 4. Deployment & Production
 
 ### Environment Variables
-Before deploying, you must obtain a **Gemini API Key** from Google AI Studio.
-1.  Create a `.env` file in the project root.
-2.  Add your API key to the file:
-    ```
-    GEMINI_API_KEY=your_google_api_key_here
-    ```
+Copy `.env.example` to `.env` and provide values for the required variables. At minimum you will need API keys for Gemini, OpenAI or Anthropic and identifiers for your deployment platform.
+
+```bash
+cp .env.example .env
+```
+See `.env.example` for all supported variables such as `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and deployment IDs.
 
 ### Building for Production
 Run the following command to build the application for production:
