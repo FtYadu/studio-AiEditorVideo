@@ -140,6 +140,10 @@ cp .env.example .env
 ```
 See `.env.example` for all supported variables such as `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and deployment IDs.
 
+### Security & Secrets
+
+Guidance for managing API keys and other secrets is available in [`docs/security.md`](docs/security.md). Store secrets in platform settings (Vercel, GitHub) and rotate keys regularly.
+
 ### Building for Production
 Run the following command to build the application for production:
 ```bash
